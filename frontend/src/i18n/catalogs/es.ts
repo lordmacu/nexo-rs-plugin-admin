@@ -737,6 +737,19 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Channels (Phase 90.3.16) ─────────────────────────────
+  "channels.title": "Canales aprobados",
+  "channels.subtitle": "Aprobaciones MCP por (agente, servidor). Cada fila autoriza al agente a invocar herramientas del servidor MCP correspondiente.",
+  "channels.action.reload": "Actualizar",
+  "channels.col.agent": "Agente",
+  "channels.col.server": "Servidor",
+  "channels.col.allowlist": "Bindings permitidos",
+  "channels.allowlist.all": "todos",
+  "channels.row.revoke": "Revocar aprobación",
+  "channels.revoke.confirm": "¿Revocar el canal «{server_name}» para el agente «{agent_id}»? El agente perderá acceso a las herramientas de ese servidor.",
+  "channels.empty.body": "No hay canales aprobados.",
+  "channels.deferred.approve_note": "El flujo de aprobación (selector de servidor + editor de allowlist) llega en una próxima iteración. Mientras tanto, edita config/channels.yaml directamente.",
+
   // ── Tenants (Phase 90.3.21) ──────────────────────────────
   "tenants.title": "Empresas",
   "tenants.col.id": "ID",

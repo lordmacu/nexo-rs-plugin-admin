@@ -733,6 +733,19 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Channels (Phase 90.3.16) ─────────────────────────────
+  "channels.title": "Approved channels",
+  "channels.subtitle": "MCP approvals by (agent, server). Each row authorises the agent to invoke tools from the matching MCP server.",
+  "channels.action.reload": "Reload",
+  "channels.col.agent": "Agent",
+  "channels.col.server": "Server",
+  "channels.col.allowlist": "Allowed bindings",
+  "channels.allowlist.all": "all",
+  "channels.row.revoke": "Revoke approval",
+  "channels.revoke.confirm": "Revoke channel \"{server_name}\" for agent \"{agent_id}\"? The agent will lose access to that server's tools.",
+  "channels.empty.body": "No approved channels.",
+  "channels.deferred.approve_note": "Approval flow (server picker + allowlist editor) lands in a future iteration. For now, edit config/channels.yaml directly.",
+
   // ── Tenants (Phase 90.3.21) ──────────────────────────────
   "tenants.title": "Tenants",
   "tenants.col.id": "ID",

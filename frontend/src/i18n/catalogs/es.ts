@@ -737,6 +737,12 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
+  "memory.title": "Memoria",
+  "memory.deferred.title": "Endpoints de memoria pendientes",
+  "memory.deferred.body": "El admin RPC para query/snapshot de memoria del agente todavía no está expuesto. Mientras tanto, usa el CLI:",
+  "memory.deferred.followup": "Phase 90.x — admin/memory/query + admin/memory/snapshot",
+
   // ── Plugins (Phase 90.3.18 — placeholder) ────────────────
   "plugins.title": "Plugins",
   "plugins.deferred.title": "Endpoint pendiente",

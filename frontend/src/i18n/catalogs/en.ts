@@ -733,6 +733,12 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
+  "memory.title": "Memory",
+  "memory.deferred.title": "Memory endpoints pending",
+  "memory.deferred.body": "Admin RPC for agent memory query/snapshot is not yet exposed. Use the CLI for now:",
+  "memory.deferred.followup": "Phase 90.x — admin/memory/query + admin/memory/snapshot",
+
   // ── Plugins (Phase 90.3.18 — placeholder) ────────────────
   "plugins.title": "Plugins",
   "plugins.deferred.title": "Endpoint pending",

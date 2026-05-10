@@ -737,6 +737,12 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Plugins (Phase 90.3.18 — placeholder) ────────────────
+  "plugins.title": "Plugins",
+  "plugins.deferred.title": "Endpoint pendiente",
+  "plugins.deferred.body": "El admin RPC para el doctor de plugins (lista, capabilities, status de spawn) aún no está expuesto. Mientras tanto, ejecuta el CLI:",
+  "plugins.deferred.followup": "Phase 90.x — admin/plugins/list + admin/plugins/doctor",
+
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Configuración",
   "settings.auth.title": "Token de operador",

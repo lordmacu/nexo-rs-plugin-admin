@@ -733,6 +733,12 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Plugins (Phase 90.3.18 — placeholder) ────────────────
+  "plugins.title": "Plugins",
+  "plugins.deferred.title": "Endpoint pending",
+  "plugins.deferred.body": "The admin RPC for plugin doctor output (list, capabilities, spawn status) is not yet exposed. Use the CLI for now:",
+  "plugins.deferred.followup": "Phase 90.x — admin/plugins/list + admin/plugins/doctor",
+
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Settings",
   "settings.auth.title": "Operator token",

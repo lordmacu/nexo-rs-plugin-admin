@@ -11,7 +11,24 @@ export class HttpError extends Error {
     public status: number,
     public body: unknown,
   ) {
-    super(`HTTP ${status}`);
+    // Phase 90 audit fix — surface the daemon's error string so
+    // boot-window ("plugin handles not yet populated"), restart
+    // timeout, snapshot tenant-mismatch, encryption errors, etc.
+    // reach UI consumers via `e.message` instead of collapsing to
+    // the literal "HTTP <status>". Preserve the status fallback
+    // for cases where the body is opaque (binary, empty,
+    // non-string JSON without `message`).
+    let detail: string | null = null;
+    if (typeof body === "string" && body.length > 0) {
+      detail = body;
+    } else if (body && typeof body === "object") {
+      const candidate = (body as { message?: unknown; error?: unknown })
+        .message ?? (body as { message?: unknown; error?: unknown }).error;
+      if (typeof candidate === "string" && candidate.length > 0) {
+        detail = candidate;
+      }
+    }
+    super(detail ?? `HTTP ${status}`);
   }
 }
 

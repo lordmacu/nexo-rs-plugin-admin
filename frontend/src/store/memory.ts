@@ -15,6 +15,17 @@ import {
   type RestoreReport,
   type SnapshotMeta,
 } from "../api/memory";
+import { useTenantStore } from "./tenant";
+
+/** Phase 90 audit fix — every memory RPC must scope to the
+ *  operator-selected tenant from the rail switcher. Falls back to
+ *  "default" so single-tenant deployments (or operators without
+ *  `tenants_crud`) still work. Read at call time, not cached, so
+ *  switching tenants takes effect on the very next action without
+ *  unmounting the module. */
+function currentTenant(): string {
+  return useTenantStore.getState().activeTenantId ?? "default";
+}
 
 interface MemoryState {
   agentId: string;
@@ -97,7 +108,7 @@ export const useMemory = create<MemoryState>((set, get) => ({
       return;
     }
     try {
-      const r = await listSnapshots(agentId.trim());
+      const r = await listSnapshots(agentId.trim(), currentTenant());
       set({
         snapshots: r.snapshots ?? [],
         snapshotsError: null,
@@ -114,8 +125,11 @@ export const useMemory = create<MemoryState>((set, get) => ({
   removeSnapshot: async (id) => {
     const { agentId } = get();
     if (agentId.trim().length === 0) return;
+    // Clear stale errors so a successful delete after a failed list
+    // doesn't leave the panel red.
+    set({ snapshotsError: null });
     try {
-      await deleteSnapshot(agentId.trim(), id);
+      await deleteSnapshot(agentId.trim(), id, currentTenant());
       set({
         snapshots: get().snapshots.filter((s) => s.id !== id),
       });
@@ -134,11 +148,11 @@ export const useMemory = create<MemoryState>((set, get) => ({
     set({ createInFlight: true, snapshotsError: null });
     try {
       const r = await createSnapshot(agentId.trim(), {
-        // The store doesn't carry a tenant selector yet; default
-        // matches list/delete behaviour. Multi-tenant operators
-        // hit the CLI for non-default until a tenant picker
-        // lands in the UI.
-        tenant: "default",
+        // Phase 90 audit fix — read the rail's active tenant. The
+        // SoT is `useTenantStore`, which the rail's tenant
+        // switcher writes on every change. Single-tenant
+        // deployments fall back to "default" via currentTenant().
+        tenant: currentTenant(),
         label,
         encrypt,
       });
@@ -157,16 +171,20 @@ export const useMemory = create<MemoryState>((set, get) => ({
       throw e;
     }
   },
-  runRestore: async (snapshotId, dryRun, tenant = "default") => {
+  runRestore: async (snapshotId, dryRun, tenant) => {
     const { agentId } = get();
     if (agentId.trim().length === 0) {
       throw new Error("agent_id required");
     }
+    // Caller (RestoreSnapshotModal) passes the snapshot's own
+    // recorded tenant to defend against rail mid-flight switches.
+    // Fall back to the rail's active tenant otherwise.
+    const effectiveTenant = tenant ?? currentTenant();
     set({ restoreInFlight: true, snapshotsError: null });
     try {
       const r = await restoreSnapshot(
         agentId.trim(),
-        tenant,
+        effectiveTenant,
         snapshotId,
         dryRun,
       );

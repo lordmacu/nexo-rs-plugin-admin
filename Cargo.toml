@@ -46,7 +46,11 @@ tower-http   = { version = "0.6", features = ["limit", "trace"] }
 http         = "1"
 
 # Bake the React frontend bundle into the plugin binary.
-rust-embed   = { version = "8", features = ["axum"] }
+# `include-exclude` lets us drop .map files from the embed (Vite
+# produces sourcemaps that triple bundle size with no operator
+# value).
+rust-embed   = { version = "8", features = ["axum", "include-exclude"] }
+mime_guess   = "2"
 
 # Auth + cookie session — same primitives as nexo-microapp-sdk's
 # tracking feature.

@@ -21,6 +21,7 @@
 //! v1 surface is just healthz + admin proxy. Static asset serving
 //! lands in 90.2 alongside the React bundle.
 
+pub mod assets;
 pub mod healthz;
 
 use std::net::SocketAddr;
@@ -132,6 +133,11 @@ pub fn build_router(
     Router::new()
         .route(&cfg.health_path, get(healthz::handler))
         .merge(protected)
+        // Phase 90.2.12 — mount the embedded React SPA as the
+        // fallback service so any path NOT claimed by /api/* or
+        // /healthz falls through to the SPA shell. React Router
+        // owns the rest of the URL space.
+        .fallback_service(assets::router())
 }
 
 /// Bind, listen, drain on shutdown. Used as a `tokio::spawn`'d

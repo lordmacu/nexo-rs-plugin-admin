@@ -19,6 +19,7 @@
 
 mod auth;
 mod http;
+mod tunnel;
 
 use std::sync::Arc;
 
@@ -120,6 +121,7 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
         (http_cfg, live_token_state, admin_session)
     {
         let shutdown = shutdown.clone();
+        let port = cfg.bind.port();
         tokio::spawn(async move {
             let admin = match admin_rx.await {
                 Ok(a) => a,
@@ -135,9 +137,44 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 bind = %cfg.bind,
                 "spawning admin HTTP task"
             );
+
+            // Phase 90.4.24 — opt-in tunnel. None by default
+            // (admin = security-sensitive). Operator opts into
+            // cloudflared/tailscale via NEXO_ADMIN_TUNNEL.
+            let adapter = tunnel::from_env();
+            let _tunnel_handle = match adapter.start(port).await {
+                Ok(h) => {
+                    if let Some(url) = h.public_url.as_ref() {
+                        eprintln!(
+                            "\n  ════════════════════════════════════════════\n  \
+                             admin URL (public): {}\n  \
+                             ════════════════════════════════════════════\n",
+                            url
+                        );
+                    } else {
+                        eprintln!(
+                            "\n  ════════════════════════════════════════════\n  \
+                             admin URL: http://127.0.0.1:{}\n  \
+                             ════════════════════════════════════════════\n",
+                            port
+                        );
+                    }
+                    Some(h)
+                }
+                Err(e) => {
+                    tracing::warn!(error = %e, "tunnel start failed; loopback only");
+                    eprintln!(
+                        "\n  admin URL: http://127.0.0.1:{} (tunnel disabled: {})\n",
+                        port, e
+                    );
+                    None
+                }
+            };
+
             if let Err(e) = http::run(cfg, admin, state, session, shutdown).await {
                 tracing::error!(error = %e, "admin HTTP task exited with error");
             }
+            // _tunnel_handle dropped here — child process killed.
         });
     }
 

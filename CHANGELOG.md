@@ -10,11 +10,81 @@ this project uses [SemVer](https://semver.org/).
 Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 "Phase 90 — nexo-plugin-admin":
 
-- Memory snapshot create / restore admin RPCs (list + delete
-  shipped in 0.1.7 / 0.1.8 respectively).
 - E2E test against a running daemon (smoke tests against the
   plugin binary alone shipped in 0.1.9; full daemon-backed
   flow remains).
+- Memory snapshot follow-ups: multi-recipient encrypt, streaming
+  progress (when p95 > 30s), verify-bundle preview RPC, diff RPC
+  from UI, `MemorySnapshotReader` → `MemorySnapshotAdmin` rename
+  (next major bump).
+
+## [0.1.10] — 2026-05-10
+
+### Added
+
+- **Memory snapshot create + restore admin RPCs** — full module
+  surface in `/m/memory` is now create + list + restore + delete,
+  closing the last 🟡 follow-up of Phase 90.
+  - **`+ Create snapshot` button** opens `CreateSnapshotModal`
+    with optional label input + age-encrypt toggle. The toggle
+    is disabled (with explanatory tooltip) when the daemon
+    reports no `recipients` configured — the toggle availability
+    rides on a new `encryption_available: bool` field added to
+    the `list_snapshots` response.
+  - **`Restore` row action** opens `RestoreSnapshotModal`, a
+    2-step flow: (1) "Preview (dry run)" runs the daemon's
+    full validation pipeline (tenant + bundle + identity) but
+    stops short of mutating, returning a `RestoreReportWire` the
+    UI renders as a read-only table; (2) operator confirms by
+    typing the snapshot id prefix + clicks "Apply destructively"
+    to issue the real restore. The daemon forces
+    `auto_pre_snapshot=true` server-side so every apply is
+    reversible via the captured pre-restore bundle.
+  - **`RestoreReportTable`** renders `from_snapshot_id`,
+    `pre_snapshot_id`, `git_reset_oid`, `sqlite_restored_dbs[]`,
+    `state_files_restored[]`, and `workers_restarted` so
+    operators can audit exactly what each apply touched.
+- New i18n keys (es + en) under `memory.snapshots.{create,restore}.*`.
+
+### Changed
+
+- **Cargo deps**: `nexo-tool-meta` 0.1.9 → 0.1.12 (+5 new wire
+  types + `MemorySnapshotsListResponse` shape change carrying
+  `encryption_available`).
+- **`MemorySnapshotsListResponse` SHAPE NOTE**: response is now
+  a struct (`{ snapshots, encryption_available }`) instead of a
+  bare `Vec<SnapshotMeta>`. The TS interface adds an optional
+  `encryption_available?: boolean` so the SPA tolerates older
+  daemons (the field defaults to `false`, disabling the encrypt
+  toggle).
+- **`useMemory` zustand store**: `createNewSnapshot`,
+  `runRestore`, `clearLastRestoreReport` actions; new state
+  fields `encryptionAvailable`, `lastRestoreReport`,
+  `createInFlight`, `restoreInFlight`. `loadSnapshots()` now
+  surfaces `encryption_available`.
+
+### Defaults forced server-side (matches daemon contract)
+
+- `redact_secrets = true` — UI download path always runs the
+  secret-guard scanner. Operators who want raw bundles still use
+  the CLI's `--no-redact`.
+- `auto_pre_snapshot = true` — every UI restore is reversible via
+  the pre-restore snapshot. CLI keeps `--no-auto-pre-snapshot`.
+- `created_by = "admin-ui"` — provenance trace lands in the
+  bundle manifest.
+
+### Defensive guards
+
+- Restore by `snapshot_id`, never `bundle_path` — the UI never
+  carries a filesystem path. The daemon resolves the bundle via
+  its own `list()` lookup before opening, so admin endpoints can't
+  be coerced into arbitrary file reads.
+- `tenant` REQUIRED on restore. The daemon validates against the
+  bundle manifest's recorded tenant and rejects mismatches before
+  touching disk; cross-tenant accidents (`staging` ↔ `prod`) are
+  caught with both tenants quoted in the error.
+- `encrypt=true` with empty recipients = `InvalidParams` rejection
+  before reaching the snapshotter.
 
 ## [0.1.9] — 2026-05-10
 

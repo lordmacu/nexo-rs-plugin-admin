@@ -1,10 +1,16 @@
 // Phase 90.x.memory — memory module main panel.
 // LIVE in Phase 90.x.memory (was placeholder in 90.3.17).
+// Phase 90.x.memory-snapshot.create-restore — added create + restore
+// modals; snapshot rows gained a `Restore` action alongside delete.
 
-import { Archive, Lock, Search, Tag, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Archive, Lock, Plus, RotateCcw, Search, Tag, Trash2 } from "lucide-react";
 
 import { useMemory } from "../../store/memory";
 import { useT } from "../../i18n";
+import CreateSnapshotModal from "./CreateSnapshotModal";
+import RestoreSnapshotModal from "./RestoreSnapshotModal";
+import type { SnapshotMeta } from "../../api/memory";
 
 export default function MemoryMain() {
   const t = useT();
@@ -22,6 +28,8 @@ export default function MemoryMain() {
     loadSnapshots,
     removeSnapshot,
   } = useMemory();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [restoreFor, setRestoreFor] = useState<SnapshotMeta | null>(null);
 
   const handleSnapshotDelete = async (id: string) => {
     if (!window.confirm(t("memory.snapshots.delete_confirm", { id: id.slice(0, 8) })))
@@ -103,6 +111,15 @@ export default function MemoryMain() {
             {snapshots.length > 0 && (
               <span className="text-text-secondary">({snapshots.length})</span>
             )}
+            <button
+              type="button"
+              className="ml-auto flex items-center gap-1 rounded bg-accent px-2 py-1 text-xs font-medium normal-case tracking-normal text-white hover:bg-accent-hover"
+              onClick={() => setCreateOpen(true)}
+              title={t("memory.snapshots.create.title")}
+            >
+              <Plus size={12} />
+              {t("memory.snapshots.create.action")}
+            </button>
           </div>
           {snapshotsError !== null ? (
             <p className="text-xs text-text-secondary">
@@ -137,6 +154,14 @@ export default function MemoryMain() {
                     <time>
                       {new Date(s.created_at_ms).toLocaleString()}
                     </time>
+                    <button
+                      type="button"
+                      className="rounded p-1 text-text-meta hover:bg-warning-soft hover:text-warning"
+                      onClick={() => setRestoreFor(s)}
+                      title={t("memory.snapshots.restore.action")}
+                    >
+                      <RotateCcw size={12} />
+                    </button>
                     <button
                       type="button"
                       className="rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
@@ -212,6 +237,25 @@ export default function MemoryMain() {
           </div>
         )}
       </div>
+      {createOpen && (
+        <CreateSnapshotModal
+          onClose={() => setCreateOpen(false)}
+          onCreated={() => {
+            setCreateOpen(false);
+            void loadSnapshots();
+          }}
+        />
+      )}
+      {restoreFor && (
+        <RestoreSnapshotModal
+          snapshot={restoreFor}
+          onClose={() => setRestoreFor(null)}
+          onApplied={() => {
+            setRestoreFor(null);
+            void loadSnapshots();
+          }}
+        />
+      )}
     </div>
   );
 }

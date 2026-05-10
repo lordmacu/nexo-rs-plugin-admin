@@ -824,6 +824,50 @@ export type MemoryQueryResponse = {
  */
 entries: Array<MemoryEntryWire>, };
 
+// ─── MemorySnapshotsCreateParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/memory/create_snapshot`.
+ *
+ * `encrypt` is a server-resolved toggle: the daemon picks the
+ * recipient from `memory.snapshot.encryption.recipients[0]`. The
+ * wire never carries the recipient string itself — clients can't
+ * inject keys, and operators rotate recipients via YAML.
+ */
+export type MemorySnapshotsCreateParams = { 
+/**
+ * Agent whose memory to snapshot.
+ */
+agent_id: string, 
+/**
+ * Tenant scope. Empty string = "default" (consistent with
+ * list/delete coercion).
+ */
+tenant: string, 
+/**
+ * Optional human-readable label stored in the bundle's
+ * manifest (`pre-deploy`, `before-migration`, …).
+ */
+label?: string | null, 
+/**
+ * `true` requests age encryption. Server rejects with
+ * `InvalidParams` when `true` and recipients are empty.
+ */
+encrypt: boolean, };
+
+// ─── MemorySnapshotsCreateResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/create_snapshot`.
+ */
+export type MemorySnapshotsCreateResponse = { 
+/**
+ * Metadata of the freshly captured bundle. Same shape as
+ * `list_snapshots` entries so the SPA can append directly to
+ * its in-memory list without a refetch.
+ */
+snapshot: SnapshotMetaWire, };
+
 // ─── MemorySnapshotsDeleteParams.ts ────────────────────────────────────
 
 /**
@@ -876,12 +920,78 @@ tenant: string, };
 
 /**
  * Response for `nexo/admin/memory/list_snapshots`.
+ *
+ * SHAPE NOTE (0.1.12, Phase 90.x.memory-snapshot.create-restore):
+ * the `snapshots` field is unchanged but the response gained
+ * `encryption_available`. Older clients that previously
+ * deserialized the response as `Vec<SnapshotMetaWire>` directly
+ * will need to update — the wire is now a struct. The
+ * `serde(default)` on `encryption_available` keeps newer clients
+ * hitting older daemons functional (flag defaults to `false`,
+ * disabling the create-modal encrypt toggle).
  */
 export type MemorySnapshotsListResponse = { 
 /**
  * Snapshots ordered by `created_at_ms` descending (newest first).
  */
-snapshots: Array<SnapshotMetaWire>, };
+snapshots: Array<SnapshotMetaWire>, 
+/**
+ * `true` iff `memory.snapshot.encryption.enabled` AND
+ * `recipients` non-empty at boot. Drives the encrypt toggle
+ * availability in the create-snapshot modal so operators
+ * don't try to encrypt without a recipient.
+ */
+encryption_available: boolean, };
+
+// ─── MemorySnapshotsRestoreParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/memory/restore_snapshot`.
+ *
+ * Restore by `snapshot_id` (NOT `bundle_path`): the daemon
+ * resolves the absolute path via its `list()` lookup, so
+ * admin endpoints can't be coerced into reading arbitrary
+ * files. `tenant` is REQUIRED — the server cross-checks it
+ * against the bundle manifest's recorded tenant and rejects
+ * mismatches before touching disk.
+ */
+export type MemorySnapshotsRestoreParams = { 
+/**
+ * Agent whose state to restore.
+ */
+agent_id: string, 
+/**
+ * Tenant scope. REQUIRED — server validates against the
+ * bundle manifest's recorded tenant; mismatch =
+ * `InvalidParams` (defensive intent against accidental
+ * cross-tenant restore).
+ */
+tenant: string, 
+/**
+ * Snapshot id (UUID-shaped). Server resolves to bundle
+ * path via `list()` lookup; client never sees fs paths.
+ */
+snapshot_id: string, 
+/**
+ * `true` returns the diff that would be applied without
+ * mutating live state. Default `false` = destructive.
+ * Even when `true`, the daemon still validates tenant +
+ * resolves the bundle so the preview reflects the real
+ * restore plan.
+ */
+dry_run: boolean, };
+
+// ─── MemorySnapshotsRestoreResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/restore_snapshot`.
+ */
+export type MemorySnapshotsRestoreResponse = { 
+/**
+ * Per-restore report. SPA uses this to render the dry-run
+ * preview table and the post-apply confirmation toast.
+ */
+report: RestoreReportWire, };
 
 // ─── MicroappError.ts ────────────────────────────────────
 
@@ -1111,6 +1221,60 @@ export type ResolvedBy = { "kind": "operator_takeover" } | { "kind": "operator_d
  * Free-form reason — kept for the audit log.
  */
 reason: string, } | { "kind": "agent_resolved" };
+
+// ─── RestoreReportWire.ts ────────────────────────────────────
+
+/**
+ * Wire-side projection of `nexo_memory_snapshot::RestoreReport`.
+ * `AgentId` and `SnapshotId` flatten to strings for forward
+ * compatibility (the wire stays stable if the runtime swaps
+ * id encodings).
+ */
+export type RestoreReportWire = { 
+/**
+ * Agent the restore targeted.
+ */
+agent_id: string, 
+/**
+ * Snapshot id the bundle was restored from.
+ */
+from_snapshot_id: string, 
+/**
+ * Auto-captured pre-restore snapshot id. `None` for
+ * dry-run (no pre-snapshot is taken when nothing mutates).
+ * Production restore path forces `auto_pre_snapshot=true`
+ * server-side so this is always populated for destructive
+ * runs.
+ */
+pre_snapshot_id?: string | null, 
+/**
+ * HEAD oid the memdir was reset to, when git capture was
+ * active. `None` when the snapshot didn't carry a git body
+ * (small / state-only bundles).
+ */
+git_reset_oid?: string | null, 
+/**
+ * SQLite databases that were restored (filenames, not
+ * absolute paths — the SPA lists them in the report panel).
+ */
+sqlite_restored_dbs: Array<string>, 
+/**
+ * State files (`extract_cursor`, `last_dream_run`, …) that
+ * were restored.
+ */
+state_files_restored: Array<string>, 
+/**
+ * `true` if the daemon paused + restarted agent workers as
+ * part of the restore (always `true` for destructive runs;
+ * `false` for dry-run).
+ */
+workers_restarted: boolean, 
+/**
+ * Mirror of the request's `dry_run` for the SPA to render
+ * "Preview" vs "Applied" headers without round-tripping
+ * state.
+ */
+dry_run: boolean, };
 
 // ─── SecurityEventKind.ts ────────────────────────────────────
 

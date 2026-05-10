@@ -1754,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "nexo-plugin-admin"
-version = "0.1.9"
+version = "0.1.10"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1813,9 +1813,9 @@ dependencies = [
 
 [[package]]
 name = "nexo-tool-meta"
-version = "0.1.9"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b0c7b960ec4f7a1fa8ae387ffb70611221019f4aa09a0f3f40e030a45bafdb4"
+checksum = "3e0d7a6b5d98d21f8391785e250ec63bd68d86f517d7a94732869ef67eb4a72e"
 dependencies = [
  "base64 0.22.1",
  "chrono",

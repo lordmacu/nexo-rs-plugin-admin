@@ -612,6 +612,277 @@ has_media?: boolean,
  */
 origin_session_id?: string | null, };
 
+// ─── McpServerDetail.ts ────────────────────────────────────
+
+/**
+ * Full detail used by `mcp/get` + `mcp/upsert` payloads. Fields
+ * not relevant to a given transport are `None` / empty.
+ */
+export type McpServerDetail = { 
+/**
+ * Stable identifier (key in `mcp.servers`).
+ */
+name: string, 
+/**
+ * Transport kind (`"stdio"` | `"streamable_http"` | `"sse"` | `"auto"`).
+ */
+transport: string, 
+/**
+ * Stdio transport — executable path / shell command.
+ */
+command?: string | null, 
+/**
+ * Stdio transport — argv tail.
+ */
+args?: Array<string>, 
+/**
+ * Stdio transport — env vars forwarded to the child.
+ */
+env?: { [key in string]: string }, 
+/**
+ * Stdio transport — working directory.
+ */
+cwd?: string | null, 
+/**
+ * HTTP / SSE / Auto transport — server URL.
+ */
+url?: string | null, 
+/**
+ * HTTP / SSE / Auto transport — extra headers.
+ */
+headers?: { [key in string]: string }, 
+/**
+ * All transports — log level override.
+ */
+log_level?: string | null, 
+/**
+ * All transports — per-server override of the global
+ * `mcp.context.passthrough` flag.
+ */
+context_passthrough?: boolean | null, };
+
+// ─── McpServerSummary.ts ────────────────────────────────────
+
+/**
+ * Compact summary used by `mcp/list` responses.
+ */
+export type McpServerSummary = { 
+/**
+ * Stable identifier (key in `mcp.servers`).
+ */
+name: string, 
+/**
+ * Transport kind (`"stdio"` | `"streamable_http"` | `"sse"` | `"auto"`).
+ */
+transport: string, 
+/**
+ * Optional log level override (passed to the server via
+ * `logging/setLevel` post-init when supported).
+ */
+log_level?: string | null, };
+
+// ─── McpServersDeleteParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/mcp/delete`.
+ */
+export type McpServersDeleteParams = { 
+/**
+ * Server name to remove.
+ */
+name: string, };
+
+// ─── McpServersDeleteResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/mcp/delete`.
+ */
+export type McpServersDeleteResponse = { 
+/**
+ * `true` when the entry was removed, `false` when the name
+ * had no record (idempotent retry safe).
+ */
+removed: boolean, };
+
+// ─── McpServersGetParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/mcp/get`.
+ */
+export type McpServersGetParams = { 
+/**
+ * Server name to fetch.
+ */
+name: string, };
+
+// ─── McpServersGetResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/mcp/get`. `server: None` is the
+ * not-found case (daemon does NOT return an error so callers
+ * can probe for existence cheaply).
+ */
+export type McpServersGetResponse = { 
+/**
+ * Matching server, or `None` when the name is unknown.
+ */
+server: McpServerDetail | null, };
+
+// ─── McpServersListResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/mcp/list`.
+ */
+export type McpServersListResponse = { 
+/**
+ * Servers in stable alpha order by name.
+ */
+servers: Array<McpServerSummary>, };
+
+// ─── McpServersUpsertResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/mcp/upsert`.
+ */
+export type McpServersUpsertResponse = { 
+/**
+ * Final server record after the write.
+ */
+server: McpServerDetail, 
+/**
+ * `true` when this call created a new server, `false` when
+ * it updated an existing one (idempotent retry).
+ */
+created: boolean, };
+
+// ─── MemoryEntryWire.ts ────────────────────────────────────
+
+/**
+ * One memory entry over the wire. Mirrors
+ * `nexo_memory::MemoryEntry` minus internal-only fields.
+ */
+export type MemoryEntryWire = { 
+/**
+ * Stable UUID (string for wire stability).
+ */
+id: string, 
+/**
+ * Owning agent.
+ */
+agent_id: string, 
+/**
+ * Memory body (markdown / plain text).
+ */
+content: string, 
+/**
+ * Operator-set tags (`#user`, `#feedback`, etc.).
+ */
+tags: Array<string>, 
+/**
+ * Auto-derived concept tags (Phase 10.7 derivation).
+ */
+concept_tags: Array<string>, 
+/**
+ * ISO-8601 UTC timestamp of memory creation.
+ */
+created_at: string, 
+/**
+ * Memory type (User / Feedback / Project / Reference) —
+ * drives per-type half-life decay in scoring.
+ */
+memory_type?: string | null, };
+
+// ─── MemoryQueryParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/memory/query`.
+ */
+export type MemoryQueryParams = { 
+/**
+ * Agent whose memory to search.
+ */
+agent_id: string, 
+/**
+ * Free-text query. Empty string returns the most recent
+ * entries (recency wins when no query terms hit the FTS5
+ * MATCH).
+ */
+query: string, 
+/**
+ * Max rows to return. Server-side clamp [1, 100], default 20.
+ */
+limit: number, };
+
+// ─── MemoryQueryResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/query`.
+ */
+export type MemoryQueryResponse = { 
+/**
+ * Matching entries newest-first within the relevance band.
+ */
+entries: Array<MemoryEntryWire>, };
+
+// ─── MemorySnapshotsDeleteParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/memory/delete_snapshot`.
+ */
+export type MemorySnapshotsDeleteParams = { 
+/**
+ * Owning agent. Snapshots are partitioned by agent_id, so a
+ * rogue id can't delete another agent's bundle.
+ */
+agent_id: string, 
+/**
+ * Tenant scope. Empty string = "default".
+ */
+tenant: string, 
+/**
+ * Snapshot id (UUID-shaped) to remove.
+ */
+id: string, };
+
+// ─── MemorySnapshotsDeleteResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/delete_snapshot`.
+ */
+export type MemorySnapshotsDeleteResponse = { 
+/**
+ * `true` when the bundle was removed; idempotent retry safe
+ * (returns `true` on missing id too — daemon's local-fs
+ * delete is `Ok(())` for already-gone bundles).
+ */
+removed: boolean, };
+
+// ─── MemorySnapshotsListParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/memory/list_snapshots`.
+ */
+export type MemorySnapshotsListParams = { 
+/**
+ * Agent whose snapshots to list.
+ */
+agent_id: string, 
+/**
+ * Tenant scope. Empty string = "default".
+ */
+tenant: string, };
+
+// ─── MemorySnapshotsListResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/list_snapshots`.
+ */
+export type MemorySnapshotsListResponse = { 
+/**
+ * Snapshots ordered by `created_at_ms` descending (newest first).
+ */
+snapshots: Array<SnapshotMetaWire>, };
+
 // ─── MicroappError.ts ────────────────────────────────────
 
 /**
@@ -706,6 +977,24 @@ conversation_key: string,
  * hasn't manually overridden it).
  */
 language?: string | null, };
+
+// ─── PluginsDoctorResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/doctor`.
+ */
+export type PluginsDoctorResponse = { 
+/**
+ * Full `PluginDiscoveryReport` JSON. Identical to what the
+ * `agent doctor plugins --json` CLI emits — a stable wire
+ * shape since Phase 81.11 (`doctor_render::render_json`).
+ */
+report: JsonValue, 
+/**
+ * Server-side wall-clock when the report was built (ms
+ * since epoch). Operators see this as a "as of …" hint.
+ */
+generated_at_ms: number, };
 
 // ─── ProcessingControlState.ts ────────────────────────────────────
 
@@ -851,6 +1140,59 @@ new_hash: string,
  * `auth::REASON_MAX_LEN` chars by the handler.
  */
 reason?: string | null, };
+
+// ─── SnapshotMetaWire.ts ────────────────────────────────────
+
+/**
+ * Wire-side projection of `nexo_memory_snapshot::SnapshotMeta`.
+ * Internal fields (bundle_path, schema_versions, git_oid)
+ * surfaced as opaque strings for forward-compat.
+ */
+export type SnapshotMetaWire = { 
+/**
+ * Snapshot id (UUID-shaped string).
+ */
+id: string, 
+/**
+ * Owning agent.
+ */
+agent_id: string, 
+/**
+ * Tenant scope.
+ */
+tenant: string, 
+/**
+ * Optional human-readable label set at create time.
+ */
+label?: string | null, 
+/**
+ * Wall-clock millis since epoch when the bundle was written.
+ */
+created_at_ms: number, 
+/**
+ * Absolute filesystem path of the bundle archive.
+ */
+bundle_path: string, 
+/**
+ * Bundle size in bytes (after compression / encryption).
+ */
+bundle_size_bytes: number, 
+/**
+ * Hex-encoded SHA-256 of the bundle.
+ */
+bundle_sha256: string, 
+/**
+ * `Some(oid)` when git-mode snapshots captured a commit.
+ */
+git_oid?: string | null, 
+/**
+ * True when the bundle is age-encrypted (`*.tar.zst.age`).
+ */
+encrypted: boolean, 
+/**
+ * True when redaction policies stripped fields at capture time.
+ */
+redactions_applied: boolean, };
 
 // ─── TranscriptRole.ts ────────────────────────────────────
 

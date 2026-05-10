@@ -12,6 +12,22 @@ readme      = "README.md"
 keywords    = ["nexo", "admin", "plugin", "framework", "ui"]
 categories  = ["command-line-utilities", "web-programming::http-server"]
 
+# Bundle the React `frontend/dist/` into the published crate so
+# rust-embed can find it at compile time after `cargo install`.
+# Source files (frontend/src/) and node_modules/ are NOT
+# packaged — operators install + run, not rebuild.
+#
+# Default `cargo package` excludes anything outside src/ + LICENSE
+# + README + Cargo.toml. We add the built dist explicitly.
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "LICENSE*",
+    "README.md",
+    "plugin.toml",
+    "frontend/dist/**/*",
+]
+
 [[bin]]
 name = "nexo-plugin-admin"
 path = "src/main.rs"

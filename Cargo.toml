@@ -1,0 +1,83 @@
+[package]
+name        = "nexo-plugin-admin"
+description = "Official admin plugin for the nexo-rs framework — out-of-tree subprocess plugin hosting a React UI to administer agents, skills, channels, LLM providers, memory, plugins, MCP servers, and observability surfaces."
+version     = "0.1.0"
+edition     = "2021"
+rust-version = "1.80"
+license     = "MIT OR Apache-2.0"
+authors     = ["Cristian García <informacion@cristiangarcia.co>"]
+repository  = "https://github.com/lordmacu/nexo-rs-plugin-admin"
+homepage    = "https://github.com/lordmacu/nexo-rs-plugin-admin"
+readme      = "README.md"
+keywords    = ["nexo", "admin", "plugin", "framework", "ui"]
+categories  = ["command-line-utilities", "web-programming::http-server"]
+
+[[bin]]
+name = "nexo-plugin-admin"
+path = "src/main.rs"
+
+[dependencies]
+# Phase 81.15.a — child-side `PluginAdapter` for subprocess
+# plugins. The `plugin` feature pulls nexo-plugin-manifest +
+# nexo-broker + (gated) nexo-llm + nexo-memory + toml + dashmap.
+# `admin` exposes the AdminClient surface so the HTTP `/api/admin`
+# proxy can speak to the daemon's admin RPC table.
+nexo-microapp-sdk = { version = "0.1.14", features = ["admin", "plugin", "notifications", "events"] }
+
+# Phase 82.10.m.c — reusable HTTP scaffolding (bearer middleware,
+# admin proxy, static-asset router, LiveTokenState, error mapping).
+# Lifted verbatim from agent-creator-microapp's M2 work.
+nexo-microapp-http = "0.1.0"
+
+# Wire types for the admin RPC surface (LlmProviderSummary,
+# AdminAuditRow, etc.). The plugin's frontend consumes the same
+# shapes via ts-rs codegen.
+nexo-tool-meta = "0.1.6"
+
+# Manifest parser for sanity checks at boot.
+nexo-plugin-manifest = "0.1.1"
+
+# HTTP runtime stack — same versions as agent-creator-microapp.
+axum         = { version = "0.7", default-features = false, features = ["http1", "json", "tokio", "tower-log", "query"] }
+tokio        = { version = "1", features = ["rt-multi-thread", "macros", "sync", "process", "signal", "io-util", "io-std"] }
+tokio-util   = { version = "0.7", features = ["rt", "compat"] }
+tower        = { version = "0.5", features = ["util"] }
+tower-http   = { version = "0.6", features = ["limit", "trace"] }
+http         = "1"
+
+# Bake the React frontend bundle into the plugin binary.
+rust-embed   = { version = "8", features = ["axum"] }
+
+# Auth + cookie session — same primitives as nexo-microapp-sdk's
+# tracking feature.
+hmac         = "0.12"
+sha2         = "0.10"
+subtle       = "2"
+base64       = "0.22"
+rand         = "0.8"
+
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+tracing      = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow       = "1"
+thiserror    = "1"
+async-trait  = "0.1"
+
+[dev-dependencies]
+tempfile     = "3"
+http-body-util = "0.1"
+
+[profile.release]
+lto         = "thin"
+codegen-units = 1
+strip       = "symbols"
+
+# Iterative release builds — same opt-level as `release` but skip
+# LTO and bump codegen-units so codegen parallelises across all
+# cores. Use for local validation; reserve `--release` for publish.
+[profile.release-fast]
+inherits      = "release"
+lto           = false
+codegen-units = 16
+strip         = "none"

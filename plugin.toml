@@ -1,0 +1,94 @@
+# Phase 90.1 — `nexo-plugin-admin` manifest (v2, canonical Phase 81.13 shape).
+#
+# Official admin plugin for the nexo-rs framework. Combines:
+#   - Phase 81.14 subprocess entrypoint (daemon spawns child)
+#   - Phase 82.12 http_server capability (loopback HTTP for UI)
+#   - Phase 82.10 admin RPC consumer (full framework administration)
+#
+# Operator install:
+#   $ cargo install nexo-plugin-admin
+#   $ agent admin                              # daemon spawns plugin
+#
+# Replaces the in-tree `proyecto/admin-ui/` (rust-embed baked into
+# the daemon binary) with an out-of-tree subprocess that ships +
+# updates independently from the daemon.
+
+manifest_version = 2
+
+[plugin]
+id          = "admin"
+version     = "0.1.0"
+name        = "Admin UI"
+description = "Official framework administration plugin (agents, skills, channels, LLM providers, memory, plugins, MCP, observability)"
+min_nexo_version = ">=0.1.0"
+
+# Phase 81.14 entrypoint — daemon spawns this binary as a child
+# process and drives it via newline-delimited JSON-RPC 2.0 over
+# stdin/stdout (see nexo-plugin-contract.md §1).
+#
+# Operators installing via `cargo install` get the binary in
+# `~/.cargo/bin/`; the daemon's discovery walker accepts an
+# unqualified command name and resolves it through PATH.
+[plugin.entrypoint]
+command = "nexo-plugin-admin"
+args    = []
+
+# Phase 82.12 — HTTP server hosted by this plugin. The daemon
+# auto-allowlists `token_env` past the env blocklist so the
+# bearer token survives spawn.
+[plugin.capabilities.http_server]
+port        = 18000
+bind        = "127.0.0.1"
+token_env   = "NEXO_ADMIN_TOKEN"
+health_path = "/healthz"
+
+# Phase 82.10 admin RPC capabilities required by the plugin's UI.
+# Operator must grant these in `extensions.yaml.admin.capabilities_grant`.
+# Without them the daemon refuses to spawn the plugin (fail-fast).
+[plugin.capabilities.admin]
+required = [
+    # Phase 83.8.8 — agents / skills / llm_providers CRUD.
+    "agents_crud",
+    "skills_crud",
+    "llm_keys_crud",
+    # Phase 83.8.9 — channels + pairing flows.
+    "channels_crud",
+    "pairing_initiate",
+    # Phase 82.11 — transcript firehose subscription.
+    "transcripts_read",
+    # Phase 82.13 — operator takeover/intervention.
+    "operator_intervention",
+    # Phase 82.14 — escalation read + resolve.
+    "escalations_read",
+    "escalations_resolve",
+    # Phase 83.12.audit-page — read access to microapp_admin_audit.
+    "audit_read",
+    # Memory query + snapshot — Phase 36.2 + observability.
+    "memory_query",
+    "memory_snapshot",
+    # Plugin doctor / capability inventory — Phase 81.11.
+    "plugin_doctor",
+    # Multi-tenant CRUD — Phase 83.8.12.
+    "tenants_crud",
+]
+optional = [
+    # Phase 82.10.o — operator bearer rotation. Optional because
+    # the UI degrades gracefully when not granted (rotate button
+    # surfaces a -32004 toast). CRITICAL: a compromised plugin
+    # with this capability can lock the operator out.
+    "auth_rotate",
+    # Phase 82.10.x — secrets store write (used by LLM key wizard).
+    "secrets_write",
+    # Phase 82.11 — subscribe to live agent_events firehose so the
+    # transcripts page updates in real-time. Optional because UI
+    # falls back to RPC pull when not granted.
+    "agent_events_subscribe_all",
+    # Phase 82.10.n — channel credential persistence.
+    "credentials_crud",
+]
+
+[plugin.meta]
+author     = "Cristian García"
+license    = "MIT OR Apache-2.0"
+homepage   = "https://github.com/lordmacu/nexo-rs-plugin-admin"
+repository = "https://github.com/lordmacu/nexo-rs-plugin-admin"

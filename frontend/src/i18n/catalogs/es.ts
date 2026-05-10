@@ -779,11 +779,27 @@ const es = {
   "tenants.create.cancel": "Cancelar",
   "tenants.deferred.crud_note": "El operador de configuración (crear / renombrar / desactivar) llegará cuando los wrappers admin tenants/* estén expuestos en api/tenants.ts.",
 
-  // ── MCP servers (Phase 90.3.19 — placeholder) ───────────
+  // ── MCP servers (Phase 90.x.mcp — LIVE) ─────────────────
   "mcp_servers.title": "Servidores MCP",
-  "mcp_servers.deferred.title": "Endpoints MCP pendientes",
-  "mcp_servers.deferred.body": "Los servidores MCP se gestionan hoy via CLI / archivo de config; la API admin RPC para list/upsert/delete está pendiente:",
-  "mcp_servers.deferred.followup": "Phase 90.x — admin/mcp/list + admin/mcp/upsert + admin/mcp/delete",
+  "mcp_servers.subtitle": "Servidores MCP que el agente consume. Cada entrada vive en config/mcp.yaml.mcp.servers.<nombre>.",
+  "mcp_servers.action.reload": "Actualizar",
+  "mcp_servers.action.create": "Crear",
+  "mcp_servers.action.delete": "Eliminar",
+  "mcp_servers.col.name": "Nombre",
+  "mcp_servers.col.transport": "Transporte",
+  "mcp_servers.col.log_level": "Log level",
+  "mcp_servers.col.actions": "Acciones",
+  "mcp_servers.empty.body": "Sin servidores MCP configurados.",
+  "mcp_servers.delete.confirm": "¿Eliminar el servidor MCP «{name}»? Los agentes que lo usen perderán las herramientas asociadas.",
+  "mcp_servers.create.title": "Crear servidor MCP",
+  "mcp_servers.create.name_label": "Nombre",
+  "mcp_servers.create.transport_label": "Transporte",
+  "mcp_servers.create.command_label": "Comando",
+  "mcp_servers.create.args_label": "Argumentos (separados por espacios)",
+  "mcp_servers.create.url_label": "URL",
+  "mcp_servers.create.action": "Crear",
+  "mcp_servers.create.saving": "Guardando…",
+  "mcp_servers.create.cancel": "Cancelar",
 
   // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
   "memory.title": "Memoria",

@@ -70,6 +70,8 @@ required = [
     "plugin_doctor",
     # Multi-tenant CRUD — Phase 83.8.12.
     "tenants_crud",
+    # MCP server CRUD — Phase 90.x.mcp.
+    "mcp_crud",
 ]
 optional = [
     # Phase 82.10.o — operator bearer rotation. Optional because

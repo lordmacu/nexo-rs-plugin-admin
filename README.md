@@ -51,6 +51,31 @@ cargo build --profile release-fast
 cd frontend && npm install && npm run dev    # vite dev server with /api proxy
 ```
 
+## Testing
+
+Unit tests (cookie HMAC, tunnel adapters, asset cache headers):
+
+```bash
+cargo test
+```
+
+End-to-end smoke tests (spawn the plugin binary + drive it):
+
+```bash
+cargo build                                  # tests need the binary
+cargo test --tests -- --ignored
+```
+
+The `--ignored` opt-in avoids flaky binary-spawn behavior in
+sandboxed CI; run them locally + as a release-gate. Coverage:
+
+- `handshake_smoke` — `initialize` JSON-RPC handshake returns
+  the expected `server_info` + empty `tools` shape.
+- `http_smoke` — `/healthz` 200, `/` SPA shell baked, `/api/admin`
+  401 without bearer + 401 with wrong bearer.
+- `login_form_renders_unauthenticated` — `/login` form HTML
+  contains the brand string + password input.
+
 ## License
 
 MIT OR Apache-2.0.

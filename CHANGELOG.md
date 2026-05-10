@@ -12,7 +12,35 @@ Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 
 - Memory snapshot create / restore admin RPCs (list + delete
   shipped in 0.1.7 / 0.1.8 respectively).
-- Plugin admin e2e test against a running daemon.
+- E2E test against a running daemon (smoke tests against the
+  plugin binary alone shipped in 0.1.9; full daemon-backed
+  flow remains).
+
+## [0.1.9] — 2026-05-10
+
+### Added
+
+- **3 e2e smoke tests** in `tests/`:
+  - `handshake_smoke::handshake_initialize_returns_manifest_reply`
+    — spawns the binary, sends an `initialize` JSON-RPC request,
+    verifies `server_info.name`, `server_info.version`, and
+    empty `tools[]` (plugin admin doesn't expose tools — it
+    consumes them via `AdminClient`).
+  - `http_smoke::http_endpoints_respond_correctly` — spawns the
+    binary with `NEXO_ADMIN_TOKEN`, asserts `/healthz` 200,
+    `/` SPA shell, `/api/admin` 401 without bearer + 401 with
+    wrong bearer.
+  - `http_smoke::login_form_renders_unauthenticated` — `/login`
+    HTML contains the brand string + password input.
+- Tests are `#[ignore]` by default (opt-in with
+  `cargo test --tests -- --ignored`) so sandboxed CI without
+  binary-spawn permission isn't broken.
+- README "Testing" section documenting the opt-in flow.
+
+### Changed
+
+- (no behavioral changes vs 0.1.8 — release-only bump for the
+  test surface).
 
 ## [0.1.8] — 2026-05-10
 
@@ -279,7 +307,12 @@ to spawn the plugin:
 Optional (degrade gracefully): `auth_rotate`, `secrets_write`,
 `agent_events_subscribe_all`, `credentials_crud`.
 
-[Unreleased]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.5...HEAD
+[Unreleased]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.9...HEAD
+[0.1.9]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.8...nexo-plugin-admin-v0.1.9
+[0.1.8]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.7...nexo-plugin-admin-v0.1.8
+[0.1.7]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.6...nexo-plugin-admin-v0.1.7
+[0.1.6]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.5...nexo-plugin-admin-v0.1.6
+[old-Unreleased]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.5...HEAD
 [0.1.5]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.4...nexo-plugin-admin-v0.1.5
 [0.1.4]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.3...nexo-plugin-admin-v0.1.4
 [0.1.3]: https://github.com/lordmacu/nexo-rs-plugin-admin/compare/nexo-plugin-admin-v0.1.2...nexo-plugin-admin-v0.1.3

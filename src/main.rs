@@ -13,6 +13,8 @@
 //! Wire format spec: workspace root `nexo-plugin-contract.md`.
 //! Reference SDK: `nexo_microapp_sdk::plugin::PluginAdapter`.
 
+mod http;
+
 use nexo_microapp_sdk::plugin::PluginAdapter;
 
 const MANIFEST: &str = include_str!("../plugin.toml");

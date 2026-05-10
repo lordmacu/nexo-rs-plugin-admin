@@ -37,6 +37,9 @@ use tower_http::limit::RequestBodyLimitLayer;
 
 // Re-export the live-token primitives so future modules
 // (rotate UI, login form) keep importing `crate::http::LiveTokenState`.
+// `handle_token_rotated` is referenced by Phase 90.4 when we wire
+// the daemon `auth_rotate` notification listener.
+#[allow(unused_imports)]
 pub use nexo_microapp_http::auth::{handle_token_rotated, token_hash, LiveTokenState};
 
 const BODY_LIMIT_BYTES: usize = 1 << 20; // 1 MiB

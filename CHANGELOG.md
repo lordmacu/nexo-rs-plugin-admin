@@ -10,9 +10,37 @@ this project uses [SemVer](https://semver.org/).
 Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 "Phase 90 — nexo-plugin-admin":
 
-- Memory snapshot create / restore admin RPCs (CLI-only for now;
-  list shipped in 0.1.7).
+- Memory snapshot create / restore admin RPCs (list + delete
+  shipped in 0.1.7 / 0.1.8 respectively).
 - Plugin admin e2e test against a running daemon.
+
+## [0.1.8] — 2026-05-10
+
+### Added
+
+- **Snapshot delete button** per row on the `/m/memory` page.
+  Confirms with id prefix before calling
+  `nexo/admin/memory/delete_snapshot`. Idempotent — operator
+  hits the same delete twice without error.
+- 2 i18n keys under `memory.snapshots.{delete,delete_confirm}`.
+
+### Changed
+
+- **Shared snapshotter cell** — `LiveMemorySnapshotReader` now
+  reads from a shared `Arc<RwLock<Option<Arc<dyn MemorySnapshotter>>>>`
+  cell that the daemon's main.rs populates after the late-stage
+  snapshotter is built. Lifts the v1 limitation where operators
+  with custom `path_resolver` maps saw an empty list — the
+  panel now reflects the same `LocalFsSnapshotter` instance the
+  agent runtime uses (per-agent memdir overrides + custom
+  sqlite roots).
+- Bumped daemon dependency floor to `nexo-tool-meta@0.1.11` +
+  `nexo-core@0.1.11`.
+
+### Tests
+
+- 12/12 pass — added 5 new (list happy + empty agent + tenant
+  default + delete records call + delete rejects empty id).
 
 ## [0.1.7] — 2026-05-10
 

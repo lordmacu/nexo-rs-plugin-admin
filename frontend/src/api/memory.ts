@@ -57,3 +57,18 @@ export async function listSnapshots(
     { agent_id, tenant },
   );
 }
+
+export interface MemorySnapshotsDeleteResponse {
+  removed: boolean;
+}
+
+export async function deleteSnapshot(
+  agent_id: string,
+  id: string,
+  tenant = "default",
+): Promise<MemorySnapshotsDeleteResponse> {
+  return adminCall<MemorySnapshotsDeleteResponse>(
+    "nexo/admin/memory/delete_snapshot",
+    { agent_id, id, tenant },
+  );
+}

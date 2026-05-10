@@ -823,6 +823,8 @@ const en = {
   "memory.snapshots.empty": "No snapshots for this agent. Create one with `agent memory snapshot --agent <id>`.",
   "memory.snapshots.error": "Could not list snapshots: {message}",
   "memory.snapshots.more": "and {count} more…",
+  "memory.snapshots.delete": "Delete snapshot",
+  "memory.snapshots.delete_confirm": "Delete snapshot {id}…? The bundle is removed from disk; future restores require a different snapshot.",
 
   // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",

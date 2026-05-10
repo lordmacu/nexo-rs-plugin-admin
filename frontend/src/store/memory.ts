@@ -4,6 +4,7 @@
 import { create } from "zustand";
 
 import {
+  deleteSnapshot,
   listSnapshots,
   queryMemory,
   type MemoryEntry,
@@ -22,6 +23,7 @@ interface MemoryState {
   setQuery: (q: string) => void;
   search: () => Promise<void>;
   loadSnapshots: () => Promise<void>;
+  removeSnapshot: (id: string) => Promise<void>;
 }
 
 export const useMemory = create<MemoryState>((set, get) => ({
@@ -66,6 +68,21 @@ export const useMemory = create<MemoryState>((set, get) => ({
         snapshotsError: e instanceof Error ? e.message : String(e),
         snapshots: [],
       });
+    }
+  },
+  removeSnapshot: async (id) => {
+    const { agentId } = get();
+    if (agentId.trim().length === 0) return;
+    try {
+      await deleteSnapshot(agentId.trim(), id);
+      set({
+        snapshots: get().snapshots.filter((s) => s.id !== id),
+      });
+    } catch (e) {
+      set({
+        snapshotsError: e instanceof Error ? e.message : String(e),
+      });
+      throw e;
     }
   },
 }));

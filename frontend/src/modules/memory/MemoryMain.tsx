@@ -1,7 +1,7 @@
 // Phase 90.x.memory — memory module main panel.
 // LIVE in Phase 90.x.memory (was placeholder in 90.3.17).
 
-import { Archive, Lock, Search, Tag } from "lucide-react";
+import { Archive, Lock, Search, Tag, Trash2 } from "lucide-react";
 
 import { useMemory } from "../../store/memory";
 import { useT } from "../../i18n";
@@ -20,7 +20,18 @@ export default function MemoryMain() {
     setQuery,
     search,
     loadSnapshots,
+    removeSnapshot,
   } = useMemory();
+
+  const handleSnapshotDelete = async (id: string) => {
+    if (!window.confirm(t("memory.snapshots.delete_confirm", { id: id.slice(0, 8) })))
+      return;
+    try {
+      await removeSnapshot(id);
+    } catch {
+      /* error already in store */
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,6 +137,14 @@ export default function MemoryMain() {
                     <time>
                       {new Date(s.created_at_ms).toLocaleString()}
                     </time>
+                    <button
+                      type="button"
+                      className="rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
+                      onClick={() => void handleSnapshotDelete(s.id)}
+                      title={t("memory.snapshots.delete")}
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 </li>
               ))}

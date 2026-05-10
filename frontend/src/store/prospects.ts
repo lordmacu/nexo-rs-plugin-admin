@@ -1,16 +1,24 @@
-// CRM card per conversation. Backed by the microapp's `prospects`
-// sqlite table. Boot snapshot lands via `chatMetaBoot.ts`; every
-// mutation fires a PUT/DELETE so other devices/tabs can converge
-// next time they refetch.
+// Phase 90.2 — empty prospects stub. The CRM `prospects` concept
+// belongs to the marketing extension (lead pipeline per conversation);
+// the admin plugin doesn't surface lead management. Stub returns
+// an empty Map so ChatListItem renders the chat list without the
+// "prospect" badge cell, but with no errors.
+//
+// Original lives in agent-creator-microapp/src/store/prospects.ts
+// — restored intact when the marketing demo runs alongside.
 
 import { create } from "zustand";
-import {
-  deleteProspect as apiDeleteProspect,
-  upsertProspect as apiUpsertProspect,
-  type ProspectRow,
-} from "../api/chat_meta";
 
-export type Prospect = ProspectRow;
+export interface Prospect {
+  conversation_key: string;
+  name: string;
+  email?: string | undefined;
+  phone?: string | undefined;
+  notes?: string | undefined;
+  label_ids: string[];
+  created_at_ms: number;
+  updated_at_ms: number;
+}
 
 interface ProspectsState {
   prospects: Map<string, Prospect>;
@@ -33,7 +41,17 @@ export const useProspects = create<ProspectsState>((set, get) => ({
   },
 
   upsert: async (input) => {
-    const row = await apiUpsertProspect(input);
+    // No-op upsert in admin plugin — the CRM table doesn't exist.
+    const row: Prospect = {
+      conversation_key: input.conversation_key,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      notes: input.notes,
+      label_ids: input.label_ids ?? [],
+      created_at_ms: Date.now(),
+      updated_at_ms: Date.now(),
+    };
     const next = new Map(get().prospects);
     next.set(row.conversation_key, row);
     set({ prospects: next });
@@ -41,7 +59,6 @@ export const useProspects = create<ProspectsState>((set, get) => ({
   },
 
   remove: async (conversation_key) => {
-    await apiDeleteProspect(conversation_key);
     const next = new Map(get().prospects);
     next.delete(conversation_key);
     set({ prospects: next });

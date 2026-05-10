@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Phase 83.13.theme — pull lib's CSS vars
+   (`--nexo-microapp-*` tokens) BEFORE app overrides so the
+   cascade favours app-side re-declarations of any token. */
+@import "@lordmacu/nexo-microapp-ui-react/styles.css";
+
+/* WhatsApp Web background pattern (subtle dot tile). The actual
+   WA bg uses a doodle pattern; we approximate with a flat color
+   which the bubble area renders against. */
+:root {
+  font-family: "Segoe UI", "Helvetica Neue", system-ui, -apple-system, Arial,
+    sans-serif;
+  color: #111b21;
+  background-color: #efeae2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* Outgoing bubble tail — bottom-right triangle */
+.bubble-out::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 12px 8px;
+  border-color: transparent transparent #d9fdd3 transparent;
+}
+
+/* Incoming bubble tail — bottom-left triangle */
+.bubble-in::after {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 8px 12px 0;
+  border-color: transparent #ffffff transparent transparent;
+}

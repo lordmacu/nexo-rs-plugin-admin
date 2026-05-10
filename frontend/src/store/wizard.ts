@@ -1,6 +1,6 @@
 // M9 — onboarding wizard draft state.
 //
-// Persisted to `localStorage` under `agent-creator:wizard:v1`
+// Persisted to `localStorage` under `nexo-admin:wizard:v1`
 // behind a versioned shape so a future schema bump can wipe stale
 // drafts cleanly. The raw API key (`llm.api_key_raw`) is held in
 // memory only — the `partialize` callback strips it before write.
@@ -95,7 +95,7 @@ interface WizardActions {
 
 export type WizardStoreState = WizardDraft & WizardActions;
 
-const STORAGE_KEY = "agent-creator:wizard:v1";
+const STORAGE_KEY = "nexo-admin:wizard:v1";
 
 export const useWizard = create<WizardStoreState>()(
   persist(

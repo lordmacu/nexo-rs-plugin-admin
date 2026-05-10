@@ -29,7 +29,7 @@ import { useT } from "../../i18n";
 // the operator first hit the wizard — limitation accepted; the
 // fix scopes to the create+pair-in-one-flow path which is what
 // the agent-creator wizard actually does.
-const INSTANCE_MODELS_KEY = "agent-creator:instance-models:v1";
+const INSTANCE_MODELS_KEY = "nexo-admin:instance-models:v1";
 
 function loadInstanceModels(): Record<
   string,

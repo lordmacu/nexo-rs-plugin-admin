@@ -38,7 +38,7 @@ interface LlmProviderInstance {
 
 // Per-instance model cache key — shared with wizard StepLlm so a
 // freshly-created instance resolves its model automatically.
-const INSTANCE_MODELS_KEY = "agent-creator:instance-models:v1";
+const INSTANCE_MODELS_KEY = "nexo-admin:instance-models:v1";
 
 function loadInstanceModels(): Record<
   string,

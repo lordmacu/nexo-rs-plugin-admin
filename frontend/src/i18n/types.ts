@@ -17,4 +17,4 @@ export const SUPPORTED_LOCALES: ReadonlyArray<{
 ];
 
 /** localStorage key the operator's choice persists at. */
-export const LOCALE_STORAGE_KEY = "agent-creator:locale:v1";
+export const LOCALE_STORAGE_KEY = "nexo-admin:locale:v1";

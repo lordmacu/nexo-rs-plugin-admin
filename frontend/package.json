@@ -1,7 +1,7 @@
 {
-  "name": "agent-creator-frontend",
+  "name": "nexo-rs-plugin-admin-ui",
   "private": true,
-  "version": "0.0.108",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

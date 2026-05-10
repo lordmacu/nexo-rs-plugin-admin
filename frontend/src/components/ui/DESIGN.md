@@ -1,4 +1,4 @@
-# Design system — agent-creator microapp
+# Design system — nexo-rs admin plugin
 
 Single source of truth for visual styling across every
 module (chats / marketing / agents / pollers / future).

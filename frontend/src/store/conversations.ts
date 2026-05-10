@@ -39,7 +39,7 @@ function truncate(s: string, n: number): string {
 // the operator sees the deleted chat flash for a frame until the
 // snapshot retroactively prunes. Persisting locally turns the
 // race into a no-op on subsequent boots.
-const DISMISS_STORAGE_KEY = "agent-creator:chat-dismiss:v1";
+const DISMISS_STORAGE_KEY = "nexo-admin:chat-dismiss:v1";
 
 function loadDismissCache(): Record<string, number> {
   try {

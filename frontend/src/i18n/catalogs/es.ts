@@ -1251,7 +1251,7 @@ const es = {
   "wizard.welcome.start": "Empezar",
 
   // ── Wizard — StepShell rail ──────────────────────────────
-  "wizard.shell.app_title": "Agent Creator",
+  "wizard.shell.app_title": "nexo-rs admin",
   "wizard.shell.app_subtitle": "Configuración inicial",
   "wizard.shell.rail.welcome.title": "Bienvenida",
   "wizard.shell.rail.welcome.blurb": "Configurar agente",
@@ -1329,7 +1329,7 @@ const es = {
   "wizard.page.restart_confirm": "¿Empezar de nuevo? Tu progreso se borrará.",
 
   // ── Auth — Login ─────────────────────────────────────────
-  "auth.login.title": "Agent Creator",
+  "auth.login.title": "nexo-rs admin",
   "auth.login.subtitle": "Pegá el token de acceso que el operador configuró.",
   "auth.login.token_placeholder": "AGENT_CREATOR_TOKEN…",
   "auth.login.error_empty": "Pegá tu token de acceso para continuar.",

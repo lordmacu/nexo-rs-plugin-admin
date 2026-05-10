@@ -17,6 +17,6 @@ export const useAuth = create<AuthState>()(
       login: (token) => set({ token }),
       logout: () => set({ token: null }),
     }),
-    { name: "agent-creator-auth" },
+    { name: "nexo-admin-auth" },
   ),
 );

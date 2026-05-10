@@ -6,7 +6,7 @@
 import { create } from "zustand";
 import { primeAudioContext } from "../lib/notifySound";
 
-const STORAGE_KEY = "agent-creator:notify:sound:v1";
+const STORAGE_KEY = "nexo-admin:notify:sound:v1";
 
 function load_initial(): boolean {
   try {

@@ -8,7 +8,7 @@
 // (a real user gesture — browsers block automatic prompts);
 // denial is stored in localStorage so the prompt never repeats.
 
-const PERMISSION_DENIED_FLAG = "agent-creator:notify:denied:v1";
+const PERMISSION_DENIED_FLAG = "nexo-admin:notify:denied:v1";
 
 /** M7.notify.b — clear the persistent denial flag so the next
  *  `ensurePermission()` re-tries the native prompt. The browser

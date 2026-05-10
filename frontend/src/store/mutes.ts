@@ -9,7 +9,7 @@
 
 import { create } from "zustand";
 
-const STORAGE_KEY = "agent-creator:mutes:v1";
+const STORAGE_KEY = "nexo-admin:mutes:v1";
 
 function load_initial(): Set<string> {
   try {

@@ -63,9 +63,8 @@ required = [
     "escalations_resolve",
     # Phase 83.12.audit-page — read access to microapp_admin_audit.
     "audit_read",
-    # Memory query + snapshot — Phase 36.2 + observability.
+    # Memory query — Phase 90.x.memory (snapshot deferred).
     "memory_query",
-    "memory_snapshot",
     # Plugin doctor / capability inventory — Phase 81.11 + 90.x.plugins.
     "plugin_doctor",
     # Multi-tenant CRUD — Phase 83.8.12.

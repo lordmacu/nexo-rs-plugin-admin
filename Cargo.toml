@@ -1,7 +1,7 @@
 [package]
 name        = "nexo-plugin-admin"
 description = "Official admin plugin for the nexo-rs framework — out-of-tree subprocess plugin hosting a React UI to administer agents, skills, channels, LLM providers, memory, plugins, MCP servers, and observability surfaces."
-version     = "0.1.3"
+version     = "0.1.4"
 edition     = "2021"
 rust-version = "1.80"
 license     = "MIT OR Apache-2.0"

@@ -801,11 +801,15 @@ const es = {
   "mcp_servers.create.saving": "Guardando…",
   "mcp_servers.create.cancel": "Cancelar",
 
-  // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
+  // ── Memory (Phase 90.x.memory — LIVE) ───────────────────
   "memory.title": "Memoria",
-  "memory.deferred.title": "Endpoints de memoria pendientes",
-  "memory.deferred.body": "El admin RPC para query/snapshot de memoria del agente todavía no está expuesto. Mientras tanto, usa el CLI:",
-  "memory.deferred.followup": "Phase 90.x — admin/memory/query + admin/memory/snapshot",
+  "memory.subtitle": "Consulta la memoria long-term de un agente. Sin agent_id la búsqueda no se ejecuta. Snapshot creation sigue siendo CLI-only por ahora.",
+  "memory.field.agent_id": "Agent ID",
+  "memory.field.query": "Búsqueda",
+  "memory.field.query_placeholder": "vacío = entradas más recientes",
+  "memory.action.search": "Buscar",
+  "memory.action.searching": "Buscando…",
+  "memory.empty.body": "Sin resultados. Ingresa un agent_id e (opcionalmente) un query.",
 
   // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",

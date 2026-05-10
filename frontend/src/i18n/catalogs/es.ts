@@ -737,6 +737,17 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Settings (Phase 90.3.20) ─────────────────────────────
+  "settings.title": "Configuración",
+  "settings.auth.title": "Token de operador",
+  "settings.auth.subtitle": "Rota el bearer del admin RPC. Las sesiones activas se invalidan; los operadores deberán volver a iniciar sesión.",
+  "settings.auth.action.rotate": "Rotar token",
+  "settings.auth.rotating": "Rotando…",
+  "settings.auth.rotate_confirm": "¿Rotar el token? Se cerrarán todas las sesiones activas.",
+  "settings.auth.rotated": "Token rotado. Hash nuevo: {hash}",
+  "settings.system.title": "Sistema",
+  "settings.system.deferred_note": "La inspección de broker, capabilities y rutas activas llegará cuando los endpoints admin RPC correspondientes estén expuestos.",
+
   // ── LLM keys (Phase 90.3.15) ─────────────────────────────
   "llm_keys.title": "Llaves LLM",
   "llm_keys.action.new": "Crear nueva",

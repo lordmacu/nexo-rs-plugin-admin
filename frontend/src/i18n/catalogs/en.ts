@@ -733,6 +733,17 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Settings (Phase 90.3.20) ─────────────────────────────
+  "settings.title": "Settings",
+  "settings.auth.title": "Operator token",
+  "settings.auth.subtitle": "Rotate the admin RPC bearer. Active sessions invalidate; operators must re-login.",
+  "settings.auth.action.rotate": "Rotate token",
+  "settings.auth.rotating": "Rotating…",
+  "settings.auth.rotate_confirm": "Rotate token? All active sessions close.",
+  "settings.auth.rotated": "Token rotated. New hash: {hash}",
+  "settings.system.title": "System",
+  "settings.system.deferred_note": "Broker inspection, capability inventory, and route status arrive when their admin RPC endpoints are exposed.",
+
   // ── LLM keys (Phase 90.3.15) ─────────────────────────────
   "llm_keys.title": "LLM keys",
   "llm_keys.action.new": "+ New",

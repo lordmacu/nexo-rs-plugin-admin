@@ -1,7 +1,7 @@
 // Phase 90.x.memory — memory module main panel.
 // LIVE in Phase 90.x.memory (was placeholder in 90.3.17).
 
-import { Search, Tag } from "lucide-react";
+import { Archive, Lock, Search, Tag } from "lucide-react";
 
 import { useMemory } from "../../store/memory";
 import { useT } from "../../i18n";
@@ -12,16 +12,20 @@ export default function MemoryMain() {
     agentId,
     query,
     entries,
+    snapshots,
+    snapshotsError,
     isLoading,
     error,
     setAgentId,
     setQuery,
     search,
+    loadSnapshots,
   } = useMemory();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     void search();
+    void loadSnapshots();
   };
 
   return (
@@ -77,6 +81,64 @@ export default function MemoryMain() {
         <div className="border-b border-danger-soft bg-danger-soft px-6 py-3 text-sm text-danger">
           {error}
         </div>
+      )}
+
+      {/* Snapshots panel — only shown when agent_id is set */}
+      {agentId.trim().length > 0 && (
+        <section className="border-b bg-panel px-6 py-3">
+          <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wide text-text-meta">
+            <Archive size={12} />
+            <span>{t("memory.snapshots.title")}</span>
+            {snapshots.length > 0 && (
+              <span className="text-text-secondary">({snapshots.length})</span>
+            )}
+          </div>
+          {snapshotsError !== null ? (
+            <p className="text-xs text-text-secondary">
+              {t("memory.snapshots.error", { message: snapshotsError })}
+            </p>
+          ) : snapshots.length === 0 ? (
+            <p className="text-xs text-text-secondary">
+              {t("memory.snapshots.empty")}
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {snapshots.slice(0, 5).map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    {s.encrypted && (
+                      <Lock size={10} className="text-warning" />
+                    )}
+                    <span className="font-mono text-text-secondary">
+                      {s.id.slice(0, 8)}…
+                    </span>
+                    {s.label && (
+                      <span className="rounded bg-panel-alt px-1.5 py-0.5 text-text-primary">
+                        {s.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-text-meta">
+                    <span>{(s.bundle_size_bytes / 1024).toFixed(0)} KB</span>
+                    <time>
+                      {new Date(s.created_at_ms).toLocaleString()}
+                    </time>
+                  </div>
+                </li>
+              ))}
+              {snapshots.length > 5 && (
+                <li className="text-xs text-text-meta">
+                  {t("memory.snapshots.more", {
+                    count: String(snapshots.length - 5),
+                  })}
+                </li>
+              )}
+            </ul>
+          )}
+        </section>
       )}
 
       <div className="flex-1 overflow-y-auto p-6">

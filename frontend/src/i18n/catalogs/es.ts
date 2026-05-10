@@ -823,6 +823,10 @@ const es = {
   "memory.action.search": "Buscar",
   "memory.action.searching": "Buscando…",
   "memory.empty.body": "Sin resultados. Ingresa un agent_id e (opcionalmente) un query.",
+  "memory.snapshots.title": "Snapshots",
+  "memory.snapshots.empty": "Sin snapshots para este agente. Crea uno con `agent memory snapshot --agent <id>`.",
+  "memory.snapshots.error": "No se pudo listar snapshots: {message}",
+  "memory.snapshots.more": "y {count} más…",
 
   // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",

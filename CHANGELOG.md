@@ -10,10 +10,35 @@ this project uses [SemVer](https://semver.org/).
 Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 "Phase 90 — nexo-plugin-admin":
 
-- Memory snapshot admin RPCs (`memory/{create,list,restore}_snapshot`).
-  V1 ships `memory/query` only; snapshot creation stays CLI-only
-  for now.
+- Memory snapshot create / restore admin RPCs (CLI-only for now;
+  list shipped in 0.1.7).
 - Plugin admin e2e test against a running daemon.
+
+## [0.1.7] — 2026-05-10
+
+### Added
+
+- **Snapshots panel on `/m/memory`** — when an agent_id is set,
+  the page lists existing snapshots (id prefix, label, encrypted
+  flag, size in KB, created_at). Up to 5 visible inline; the
+  rest collapsed behind "and N more…". Backed by
+  `nexo/admin/memory/list_snapshots` (capability
+  `memory_snapshot`, Phase 90.x.memory-snapshot).
+- 4 i18n keys under `memory.snapshots.*` (es + en).
+
+### Changed
+
+- Bumped daemon dependency floor to `nexo-tool-meta@0.1.10` +
+  `nexo-core@0.1.10`.
+
+### Known limitations
+
+- The setup-side adapter uses `DefaultPathResolver` over
+  `<state_root>/<agent_id>` layout. Operators with a custom
+  `path_resolver` (per-agent memdir map) see an empty list. The
+  follow-up that threads the daemon's shared
+  `Arc<dyn MemorySnapshotter>` through bootstrap is open in
+  upstream FOLLOWUPS.
 
 ## [0.1.6] — 2026-05-10
 

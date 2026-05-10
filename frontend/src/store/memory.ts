@@ -1,24 +1,35 @@
 // Phase 90.x.memory — memory store. Holds last query + entries.
+// Phase 90.x.memory-snapshot — snapshot list cache.
 
 import { create } from "zustand";
 
-import { queryMemory, type MemoryEntry } from "../api/memory";
+import {
+  listSnapshots,
+  queryMemory,
+  type MemoryEntry,
+  type SnapshotMeta,
+} from "../api/memory";
 
 interface MemoryState {
   agentId: string;
   query: string;
   entries: MemoryEntry[];
+  snapshots: SnapshotMeta[];
+  snapshotsError: string | null;
   isLoading: boolean;
   error: string | null;
   setAgentId: (id: string) => void;
   setQuery: (q: string) => void;
   search: () => Promise<void>;
+  loadSnapshots: () => Promise<void>;
 }
 
 export const useMemory = create<MemoryState>((set, get) => ({
   agentId: "",
   query: "",
   entries: [],
+  snapshots: [],
+  snapshotsError: null,
   isLoading: false,
   error: null,
   setAgentId: (id) => set({ agentId: id }),
@@ -38,6 +49,22 @@ export const useMemory = create<MemoryState>((set, get) => ({
         error: e instanceof Error ? e.message : String(e),
         isLoading: false,
         entries: [],
+      });
+    }
+  },
+  loadSnapshots: async () => {
+    const { agentId } = get();
+    if (agentId.trim().length === 0) {
+      set({ snapshots: [], snapshotsError: null });
+      return;
+    }
+    try {
+      const r = await listSnapshots(agentId.trim());
+      set({ snapshots: r.snapshots ?? [], snapshotsError: null });
+    } catch (e) {
+      set({
+        snapshotsError: e instanceof Error ? e.message : String(e),
+        snapshots: [],
       });
     }
   },

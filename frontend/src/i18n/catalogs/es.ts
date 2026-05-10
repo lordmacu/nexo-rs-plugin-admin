@@ -737,6 +737,12 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── MCP servers (Phase 90.3.19 — placeholder) ───────────
+  "mcp_servers.title": "Servidores MCP",
+  "mcp_servers.deferred.title": "Endpoints MCP pendientes",
+  "mcp_servers.deferred.body": "Los servidores MCP se gestionan hoy via CLI / archivo de config; la API admin RPC para list/upsert/delete está pendiente:",
+  "mcp_servers.deferred.followup": "Phase 90.x — admin/mcp/list + admin/mcp/upsert + admin/mcp/delete",
+
   // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
   "memory.title": "Memoria",
   "memory.deferred.title": "Endpoints de memoria pendientes",

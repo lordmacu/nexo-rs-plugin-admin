@@ -733,6 +733,12 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── MCP servers (Phase 90.3.19 — placeholder) ───────────
+  "mcp_servers.title": "MCP servers",
+  "mcp_servers.deferred.title": "MCP endpoints pending",
+  "mcp_servers.deferred.body": "MCP servers are managed via CLI / config file today; the admin RPC API for list/upsert/delete is pending:",
+  "mcp_servers.deferred.followup": "Phase 90.x — admin/mcp/list + admin/mcp/upsert + admin/mcp/delete",
+
   // ── Memory (Phase 90.3.17 — placeholder) ─────────────────
   "memory.title": "Memory",
   "memory.deferred.title": "Memory endpoints pending",

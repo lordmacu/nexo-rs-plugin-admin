@@ -875,6 +875,15 @@ const en = {
   "plugins.diagnostics.title": "Diagnostics",
   "plugins.empty.body": "No plugins installed. Drop manifests into the configured discovery paths and restart the daemon.",
 
+  // Phase 81.21.b.b follow-up — manual plugin restart modal.
+  "plugins.restart.title": "Restart plugin",
+  "plugins.restart.action": "Restart",
+  "plugins.restart.applying": "Restarting…",
+  "plugins.restart.cancel": "Cancel",
+  "plugins.restart.warning": "The current child process will be terminated. In-flight requests will fail with a retry error. Up to 60s for the new spawn + handshake.",
+  "plugins.restart.confirm_prompt": "Type `{prefix}` to confirm.",
+  "plugins.restart.field.plugin_id": "Plugin ID",
+
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Settings",
   "settings.auth.title": "Operator token",

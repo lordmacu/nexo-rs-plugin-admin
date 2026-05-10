@@ -879,6 +879,15 @@ const es = {
   "plugins.diagnostics.title": "Diagnósticos",
   "plugins.empty.body": "Sin plugins instalados. Añade manifests a las rutas de discovery configuradas y reinicia el daemon.",
 
+  // Phase 81.21.b.b follow-up — modal de restart manual.
+  "plugins.restart.title": "Reiniciar plugin",
+  "plugins.restart.action": "Reiniciar",
+  "plugins.restart.applying": "Reiniciando…",
+  "plugins.restart.cancel": "Cancelar",
+  "plugins.restart.warning": "El proceso hijo actual se terminará. Las requests in-flight fallarán con error retryable. Hasta 60s para el spawn nuevo + handshake.",
+  "plugins.restart.confirm_prompt": "Escribe `{prefix}` para confirmar.",
+  "plugins.restart.field.plugin_id": "Plugin ID",
+
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Configuración",
   "settings.auth.title": "Token de operador",

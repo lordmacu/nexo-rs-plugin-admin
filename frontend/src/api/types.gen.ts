@@ -1106,6 +1106,53 @@ report: JsonValue,
  */
 generated_at_ms: number, };
 
+// ─── PluginsRestartParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/restart`.
+ */
+export type PluginsRestartParams = { 
+/**
+ * Plugin id from the manifest's `[plugin] id` field. Must
+ * match a discovered subprocess plugin or the daemon
+ * returns `InvalidParams { "plugin {id} not found" }`.
+ * In-tree plugins return `InvalidParams { "plugin {id} is
+ * in-tree, restart not applicable" }` — operators restart
+ * the daemon for those.
+ */
+plugin_id: string, };
+
+// ─── PluginsRestartResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/memory/restart`.
+ */
+export type PluginsRestartResponse = { 
+/**
+ * Echo of the plugin id for client-side correlation.
+ */
+plugin_id: string, 
+/**
+ * Wallclock duration the previous `Inner` survived between
+ * last spawn (initial init or last respawn) and the manual
+ * restart. Operator forensics value: "this child lived 3
+ * minutes before I had to restart".
+ */
+previous_uptime_ms: number, 
+/**
+ * Wallclock millis since epoch when the new `Inner` was
+ * installed. Audit log correlation.
+ */
+restarted_at_ms: number, 
+/**
+ * PID of the freshly spawned child. Operator dashboards can
+ * correlate with `ps`/`top` output. `None` when the
+ * post-spawn shutdown race-check kicked in (very rare;
+ * indicates the daemon shut down between the spawn
+ * completing and the install).
+ */
+new_pid?: number | null, };
+
 // ─── ProcessingControlState.ts ────────────────────────────────────
 
 /**

@@ -7,16 +7,18 @@
 //   - Init outcomes (per-plugin spawn status)
 //   - Diagnostics (Warn/Error from discovery + capability aggregation)
 
-import { useEffect } from "react";
-import { Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, AlertTriangle, CheckCircle2, RefreshCw, RotateCcw } from "lucide-react";
 
 import { usePluginsDoctor } from "../../store/plugins";
 import type { PluginDiagnostic } from "../../api/plugin_doctor";
 import { useT } from "../../i18n";
+import RestartPluginModal from "./RestartPluginModal";
 
 export default function PluginsMain() {
   const t = useT();
   const { data, isLoading, error, reload } = usePluginsDoctor();
+  const [restartTarget, setRestartTarget] = useState<string | null>(null);
 
   useEffect(() => {
     if (data === null && !isLoading && error === null) {
@@ -104,12 +106,22 @@ export default function PluginsMain() {
               {loadedIds.map((id) => (
                 <li
                   key={id}
-                  className="flex items-center justify-between px-4 py-2 text-sm"
+                  className="flex items-center justify-between gap-3 px-4 py-2 text-sm"
                 >
                   <span className="font-mono text-xs text-text-primary">
                     {id}
                   </span>
-                  <InitOutcomeBadge outcome={initOutcomes[id]} />
+                  <div className="flex items-center gap-2">
+                    <InitOutcomeBadge outcome={initOutcomes[id]} />
+                    <button
+                      type="button"
+                      className="rounded p-1 text-text-meta hover:bg-warning-soft hover:text-warning"
+                      onClick={() => setRestartTarget(id)}
+                      title={t("plugins.restart.action")}
+                    >
+                      <RotateCcw size={12} />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -139,6 +151,16 @@ export default function PluginsMain() {
           </section>
         )}
       </div>
+      {restartTarget && (
+        <RestartPluginModal
+          pluginId={restartTarget}
+          onClose={() => setRestartTarget(null)}
+          onApplied={() => {
+            setRestartTarget(null);
+            void reload();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -18,6 +18,45 @@ Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
   from UI, `MemorySnapshotReader` → `MemorySnapshotAdmin` rename
   (next major bump).
 
+## [0.1.11] — 2026-05-10
+
+### Added
+
+- **Manual plugin restart from /m/plugins UI** — Phase 81.21.b.b
+  follow-up. New `Restart` icon button per active plugin row in
+  `PluginsMain.tsx` opens `RestartPluginModal` (confirm-by-typing
+  the plugin id prefix + 60s warning). Calls
+  `nexo/admin/plugins/restart { plugin_id }` admin RPC. Operator
+  recovery path for `gave_up` state without daemon restart.
+  - Distinct from auto-respawn (`crashed`+`respawned` events) —
+    publishes `plugin.lifecycle.<id>.restarted_manually` with
+    `{plugin_id, previous_uptime_ms, restarted_at_ms, new_pid?}`
+    payload.
+  - Capability `plugin_restart` (separate from read-only
+    `plugin_doctor`).
+  - `usePluginsDoctor` store gains `restart` action +
+    `restartInFlight` + `lastRestartReport` state.
+- New i18n keys `plugins.restart.*` (es + en).
+- New `frontend/src/api/plugin_restart.ts` wrapper.
+- `frontend/src/api/types.gen.ts` regenerated from
+  nexo-tool-meta@0.1.13 (42 → 44 types).
+
+### Changed
+
+- **Cargo deps**: `nexo-tool-meta` 0.1.12 → 0.1.13 (+2 wire types
+  for the manual restart RPC).
+- **Plugin admin**: 0.1.10 → 0.1.11.
+
+### Note
+
+The official `nexo-rs` daemon needs a `SharedPluginHandles` cell
+pattern in main.rs to actually wire the `LivePluginRestarter`
+adapter (admin bootstrap runs BEFORE `wire_plugin_registry`).
+Until that lands, the daemon returns `plugin restart domain not
+configured`. External integrations / forks can construct
+`LivePluginRestarter` directly + wire via
+`dispatcher.with_plugin_restarter()`.
+
 ## [0.1.10] — 2026-05-10
 
 ### Added

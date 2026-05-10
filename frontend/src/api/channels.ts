@@ -48,3 +48,21 @@ export async function revokeChannel(
     params,
   );
 }
+
+export interface ChannelsApproveResponse {
+  entry: ChannelEntry;
+  /** True when this call created the row, false when it was an
+   *  idempotent retry. */
+  approved: boolean;
+}
+
+/** Phase 82.10.f — append a new (agent, server) approval row.
+ *  Idempotent. `allowlist: null` (or omit) = all bindings allowed. */
+export async function approveChannel(
+  input: ChannelsApproveInput,
+): Promise<ChannelsApproveResponse> {
+  return adminCall<ChannelsApproveResponse>(
+    "nexo/admin/channels/approve",
+    input,
+  );
+}

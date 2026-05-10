@@ -1,21 +1,21 @@
-// Phase 90.3.16 — channels module main panel.
+// Phase 90.3.16 + 90.x.channels-approve — channels module.
 //
-// Lists (agent_id, server_name) channel approval rows and lets
-// the operator revoke any row. Approve flow is deferred — the
-// approve admin RPC needs additional UX work (server name picker
-// + allowlist editor) that's not v1 scope. Operator approves
-// new channels via CLI / yaml today; revoke is the dangerous
-// path so we wire it first.
+// Lists (agent_id, server_name) channel approval rows. Operator
+// can approve new rows (modal with agent + server pickers) or
+// revoke any existing row. Backed by `nexo/admin/channels/{list,
+// approve,revoke}` (Phase 82.10.f).
 
-import { useEffect } from "react";
-import { RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { useChannels } from "../../store/channels";
 import { useT } from "../../i18n";
+import ChannelApproveModal from "./ChannelApproveModal";
 
 export default function ChannelsMain() {
   const t = useT();
   const { entries, isLoading, error, reload, revoke } = useChannels();
+  const [showApprove, setShowApprove] = useState(false);
 
   useEffect(() => {
     if (entries.length === 0 && !isLoading && error === null) {
@@ -44,15 +44,25 @@ export default function ChannelsMain() {
         <h1 className="text-lg font-bold text-text-primary">
           {t("channels.title")}
         </h1>
-        <button
-          type="button"
-          className="rounded p-1.5 text-text-secondary hover:bg-panel-hover"
-          onClick={() => void reload()}
-          disabled={isLoading}
-          title={t("channels.action.reload")}
-        >
-          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded p-1.5 text-text-secondary hover:bg-panel-hover"
+            onClick={() => void reload()}
+            disabled={isLoading}
+            title={t("channels.action.reload")}
+          >
+            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          </button>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover"
+            onClick={() => setShowApprove(true)}
+          >
+            <Plus size={14} />
+            {t("channels.action.approve")}
+          </button>
+        </div>
       </header>
       {error !== null && (
         <div className="border-b border-danger-soft bg-danger-soft px-6 py-3 text-sm text-danger">
@@ -119,10 +129,13 @@ export default function ChannelsMain() {
             </table>
           )}
         </section>
-        <p className="mt-4 text-xs text-text-meta">
-          {t("channels.deferred.approve_note")}
-        </p>
       </div>
+      {showApprove && (
+        <ChannelApproveModal
+          onClose={() => setShowApprove(false)}
+          onApproved={() => setShowApprove(false)}
+        />
+      )}
     </div>
   );
 }

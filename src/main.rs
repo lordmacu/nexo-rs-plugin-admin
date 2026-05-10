@@ -17,6 +17,7 @@
 //! `Microapp` builder (NOT `PluginAdapter`, which is reserved for
 //! channel plugins handling broker events without admin RPC).
 
+mod auth;
 mod http;
 
 use std::sync::Arc;
@@ -74,6 +75,25 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
         http::LiveTokenState::from_strings(cfg.token.as_str(), cfg.operator_token_hash.as_str())
     });
 
+    // Phase 90.4 — admin login session: random password per
+    // launch + per-launch HMAC secret. Operator copies the
+    // password from stderr into the /login form.
+    let admin_session = if http_cfg.is_some() {
+        let s = auth::AdminSession::new_random();
+        // Stderr — daemon stdio bridge folds it into structured
+        // logs but we want it human-readable so an operator
+        // running the binary directly sees it on screen.
+        eprintln!(
+            "\n  ════════════════════════════════════════════\n  \
+             admin password: {}\n  \
+             ════════════════════════════════════════════\n",
+            s.password()
+        );
+        Some(auth::LiveAdminSession::new(s))
+    } else {
+        None
+    };
+
     let (admin_tx, admin_rx) =
         tokio::sync::oneshot::channel::<Arc<nexo_microapp_sdk::admin::AdminClient>>();
 
@@ -96,7 +116,9 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
     // HTTP task — only spawned when `NEXO_ADMIN_TOKEN` was set.
     // Awaits the AdminClient from `on_admin_ready`, then runs
     // until shutdown.
-    if let (Some(cfg), Some(state)) = (http_cfg, live_token_state) {
+    if let (Some(cfg), Some(state), Some(session)) =
+        (http_cfg, live_token_state, admin_session)
+    {
         let shutdown = shutdown.clone();
         tokio::spawn(async move {
             let admin = match admin_rx.await {
@@ -113,7 +135,7 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 bind = %cfg.bind,
                 "spawning admin HTTP task"
             );
-            if let Err(e) = http::run(cfg, admin, state, shutdown).await {
+            if let Err(e) = http::run(cfg, admin, state, session, shutdown).await {
                 tracing::error!(error = %e, "admin HTTP task exited with error");
             }
         });

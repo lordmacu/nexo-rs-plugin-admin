@@ -23,6 +23,7 @@
 
 pub mod assets;
 pub mod healthz;
+pub mod login;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -35,6 +36,8 @@ use nexo_microapp_http::auth::require_bearer;
 use nexo_microapp_sdk::admin::AdminClient;
 use tokio_util::sync::CancellationToken;
 use tower_http::limit::RequestBodyLimitLayer;
+
+use crate::auth::LiveAdminSession;
 
 // Re-export the live-token primitives so future modules
 // (rotate UI, login form) keep importing `crate::http::LiveTokenState`.
@@ -117,6 +120,7 @@ pub fn build_router(
     cfg: &HttpServerConfig,
     admin: Arc<AdminClient>,
     live_token_state: Arc<LiveTokenState>,
+    admin_session: Arc<LiveAdminSession>,
 ) -> Router {
     // M2.b — caller-supplied so the listener registered in
     // `main.rs` writes to the SAME `Arc<LiveTokenState>` that the
@@ -132,6 +136,11 @@ pub fn build_router(
         .layer(RequestBodyLimitLayer::new(BODY_LIMIT_BYTES));
     Router::new()
         .route(&cfg.health_path, get(healthz::handler))
+        // Phase 90.4 — login routes (unauthenticated): /login
+        // form + POST /api/login + POST /api/logout. Mount BEFORE
+        // the bearer-protected merge so the login routes don't
+        // require a bearer to reach.
+        .merge(login::router(admin_session))
         .merge(protected)
         // Phase 90.2.12 — mount the embedded React SPA as the
         // fallback service so any path NOT claimed by /api/* or
@@ -148,9 +157,10 @@ pub async fn run(
     cfg: HttpServerConfig,
     admin: Arc<AdminClient>,
     live_token_state: Arc<LiveTokenState>,
+    admin_session: Arc<LiveAdminSession>,
     shutdown: CancellationToken,
 ) -> anyhow::Result<()> {
-    let router = build_router(&cfg, admin, live_token_state);
+    let router = build_router(&cfg, admin, live_token_state, admin_session);
     let listener = tokio::net::TcpListener::bind(cfg.bind)
         .await
         .map_err(|e| anyhow::anyhow!("bind failed for {}: {e}", cfg.bind))?;

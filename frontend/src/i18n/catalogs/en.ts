@@ -733,6 +733,17 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Dashboard (Phase 90.3.13) ────────────────────────────
+  "dashboard.title": "Dashboard",
+  "dashboard.action.reload": "Reload",
+  "dashboard.partial_outage": "Partial outage:",
+  "dashboard.metric.agents": "Agents",
+  "dashboard.metric.agents_hint": "Total configured agents",
+  "dashboard.metric.llm_providers": "LLM providers",
+  "dashboard.metric.llm_providers_hint": "Instances in llm.yaml",
+  "dashboard.metric.audit_recent": "Audit 24h",
+  "dashboard.metric.audit_recent_hint": "Admin RPC calls in last 24h",
+
   // ── Audit log (Phase 83.12.audit-page) ───────────────────
   "audit.title": "Audit log",
   "audit.filter.method": "Method",

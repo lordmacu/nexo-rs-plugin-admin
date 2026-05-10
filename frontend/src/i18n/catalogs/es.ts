@@ -737,6 +737,17 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Dashboard (Phase 90.3.13) ────────────────────────────
+  "dashboard.title": "Panel",
+  "dashboard.action.reload": "Actualizar",
+  "dashboard.partial_outage": "Falla parcial:",
+  "dashboard.metric.agents": "Agentes",
+  "dashboard.metric.agents_hint": "Total de agentes configurados",
+  "dashboard.metric.llm_providers": "Proveedores LLM",
+  "dashboard.metric.llm_providers_hint": "Instancias en llm.yaml",
+  "dashboard.metric.audit_recent": "Auditoría 24h",
+  "dashboard.metric.audit_recent_hint": "Llamadas admin RPC últimas 24h",
+
   // ── Audit log (Phase 83.12.audit-page) ───────────────────
   "audit.title": "Registro de auditoría",
   "audit.filter.method": "Método",

@@ -98,7 +98,7 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
     let (admin_tx, admin_rx) =
         tokio::sync::oneshot::channel::<Arc<nexo_microapp_sdk::admin::AdminClient>>();
 
-    let app = Microapp::new(APP_NAME, env!("CARGO_PKG_VERSION"))
+    let mut app = Microapp::new(APP_NAME, env!("CARGO_PKG_VERSION"))
         .with_admin()
         .on_admin_ready(move |admin| {
             // Hand the live AdminClient to whoever is awaiting
@@ -113,6 +113,50 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 token.cancel();
             }
         });
+
+    // Phase 90.x.token-rotated — wire the daemon's
+    // `nexo/notify/token_rotated` listener so a remote
+    // `auth_rotate` updates BOTH:
+    //   - LiveTokenState   — bearer middleware accepts the new
+    //                        token on next request (hand-off via
+    //                        `nexo_microapp_http::auth::handle_token_rotated`).
+    //   - LiveAdminSession — cookie HMAC secret + login password
+    //                        rotate atomically. Existing browser
+    //                        cookies become invalid because they
+    //                        were signed with the old secret;
+    //                        operator re-logs in with the new
+    //                        password printed to stderr.
+    if let (Some(ref state), Some(ref session)) = (&live_token_state, &admin_session) {
+        let token_state = Arc::clone(state);
+        let live_session = Arc::clone(session);
+        app = app.with_notification_listener(
+            nexo_tool_meta::http_server::TOKEN_ROTATED_NOTIFY_METHOD,
+            move |params| {
+                let token_state = Arc::clone(&token_state);
+                let live_session = Arc::clone(&live_session);
+                tokio::spawn(async move {
+                    // Bearer swap (existing helper from
+                    // nexo-microapp-http).
+                    http::handle_token_rotated(token_state, params).await;
+                    // Cookie + password swap. Mints a fresh
+                    // AdminSession with a new HMAC secret +
+                    // password, atomically replaces the old one.
+                    let new_session = auth::AdminSession::new_random();
+                    eprintln!(
+                        "\n  ════════════════════════════════════════════\n  \
+                         admin password (rotated): {}\n  \
+                         ════════════════════════════════════════════\n",
+                        new_session.password()
+                    );
+                    let _prev = live_session.swap(new_session);
+                    tracing::info!(
+                        "auth_rotate: bearer + cookie session rotated; \
+                         existing browser sessions invalidated"
+                    );
+                });
+            },
+        );
+    }
 
     // HTTP task — only spawned when `NEXO_ADMIN_TOKEN` was set.
     // Awaits the AdminClient from `on_admin_ready`, then runs

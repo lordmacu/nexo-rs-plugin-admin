@@ -1,7 +1,7 @@
 [package]
 name        = "nexo-plugin-admin"
 description = "Official admin plugin for the nexo-rs framework — out-of-tree subprocess plugin hosting a React UI to administer agents, skills, channels, LLM providers, memory, plugins, MCP servers, and observability surfaces."
-version     = "0.1.5"
+version     = "0.1.6"
 edition     = "2021"
 rust-version = "1.80"
 license     = "MIT OR Apache-2.0"
@@ -48,7 +48,7 @@ nexo-microapp-http = "0.1.0"
 # Wire types for the admin RPC surface (LlmProviderSummary,
 # AdminAuditRow, etc.). The plugin's frontend consumes the same
 # shapes via ts-rs codegen.
-nexo-tool-meta = "0.1.6"
+nexo-tool-meta = "0.1.9"
 
 # Manifest parser for sanity checks at boot.
 nexo-plugin-manifest = "0.1.1"

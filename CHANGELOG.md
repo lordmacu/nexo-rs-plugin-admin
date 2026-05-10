@@ -13,10 +13,22 @@ Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 - Memory snapshot admin RPCs (`memory/{create,list,restore}_snapshot`).
   V1 ships `memory/query` only; snapshot creation stays CLI-only
   for now.
-- TokenRotated cookie session swap — daemon-issued `auth_rotate`
-  invalidates the bearer atomically but the cookie HMAC secret
-  stays until 24 h TTL elapses. Future listener swaps both.
 - Plugin admin e2e test against a running daemon.
+
+## [0.1.6] — 2026-05-10
+
+### Added
+
+- **`nexo/notify/token_rotated` listener** wired through the SDK.
+  When the daemon issues `auth_rotate`, the plugin atomically:
+  - Swaps `LiveTokenState` so the bearer middleware accepts the
+    new token on the next request (bearer rotation, existing
+    behaviour from `nexo-microapp-http`).
+  - Mints a fresh `AdminSession` (new HMAC secret + new password)
+    and swaps `LiveAdminSession`. Existing browser cookies become
+    invalid because they were signed with the old secret; the
+    operator re-logs in with the new password printed to stderr.
+- Bumped `nexo-tool-meta` consumer to `0.1.9` (was `0.1.6`).
 
 ## [0.1.5] — 2026-05-10
 

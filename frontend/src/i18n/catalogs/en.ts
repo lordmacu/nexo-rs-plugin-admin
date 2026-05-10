@@ -733,6 +733,16 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── LLM keys (Phase 90.3.15) ─────────────────────────────
+  "llm_keys.title": "LLM keys",
+  "llm_keys.action.new": "+ New",
+  "llm_keys.action.reload": "Reload",
+  "llm_keys.row.rotate": "Rotate credential",
+  "llm_keys.row.delete": "Delete instance",
+  "llm_keys.row.tenant_scope.global": "global",
+  "llm_keys.empty.body": "No providers configured. Click \"+ New\" to add one.",
+  "llm_keys.delete.confirm": "Delete instance \"{id}\"? Agents referencing it will stop working.",
+
   // ── Skills (Phase 90.3.14) ───────────────────────────────
   "skills.title": "Skills",
   "skills.action.reload": "Reload",

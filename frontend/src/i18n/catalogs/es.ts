@@ -737,6 +737,16 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── LLM keys (Phase 90.3.15) ─────────────────────────────
+  "llm_keys.title": "Llaves LLM",
+  "llm_keys.action.new": "Crear nueva",
+  "llm_keys.action.reload": "Actualizar",
+  "llm_keys.row.rotate": "Rotar credencial",
+  "llm_keys.row.delete": "Eliminar instancia",
+  "llm_keys.row.tenant_scope.global": "global",
+  "llm_keys.empty.body": "No hay proveedores configurados. Pulsa «Crear nueva» para añadir uno.",
+  "llm_keys.delete.confirm": "¿Eliminar la instancia «{id}»? Los agentes que la referencien dejarán de funcionar.",
+
   // ── Skills (Phase 90.3.14) ───────────────────────────────
   "skills.title": "Skills",
   "skills.action.reload": "Actualizar",

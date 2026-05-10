@@ -737,6 +737,17 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Skills (Phase 90.3.14) ───────────────────────────────
+  "skills.title": "Skills",
+  "skills.action.reload": "Actualizar",
+  "skills.row.delete": "Eliminar skill",
+  "skills.delete.confirm": "¿Eliminar la skill «{name}»? Esto borra el directorio del disco.",
+  "skills.deleting": "Eliminando «{name}»…",
+  "skills.empty.body": "No hay skills configuradas. Use la CLI o el contenido de extensión para añadirlas.",
+  "skills.view.empty_title": "Skills",
+  "skills.view.loading": "Cargando…",
+  "skills.view.select_a_skill": "Selecciona una skill de la lista.",
+
   // ── Dashboard (Phase 90.3.13) ────────────────────────────
   "dashboard.title": "Panel",
   "dashboard.action.reload": "Actualizar",

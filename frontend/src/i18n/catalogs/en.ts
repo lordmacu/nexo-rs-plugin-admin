@@ -733,6 +733,17 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Skills (Phase 90.3.14) ───────────────────────────────
+  "skills.title": "Skills",
+  "skills.action.reload": "Reload",
+  "skills.row.delete": "Delete skill",
+  "skills.delete.confirm": "Delete skill \"{name}\"? This removes the directory from disk.",
+  "skills.deleting": "Deleting \"{name}\"…",
+  "skills.empty.body": "No skills configured. Use the CLI or extension contents to add them.",
+  "skills.view.empty_title": "Skills",
+  "skills.view.loading": "Loading…",
+  "skills.view.select_a_skill": "Select a skill from the list.",
+
   // ── Dashboard (Phase 90.3.13) ────────────────────────────
   "dashboard.title": "Dashboard",
   "dashboard.action.reload": "Reload",

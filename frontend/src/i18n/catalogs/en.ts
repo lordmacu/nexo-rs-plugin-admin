@@ -803,11 +803,18 @@ const en = {
   "memory.deferred.body": "Admin RPC for agent memory query/snapshot is not yet exposed. Use the CLI for now:",
   "memory.deferred.followup": "Phase 90.x — admin/memory/query + admin/memory/snapshot",
 
-  // ── Plugins (Phase 90.3.18 — placeholder) ────────────────
+  // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",
-  "plugins.deferred.title": "Endpoint pending",
-  "plugins.deferred.body": "The admin RPC for plugin doctor output (list, capabilities, spawn status) is not yet exposed. Use the CLI for now:",
-  "plugins.deferred.followup": "Phase 90.x — admin/plugins/list + admin/plugins/doctor",
+  "plugins.action.reload": "Reload",
+  "plugins.generated_at": "Snapshot {ts}",
+  "plugins.summary.loaded": "Loaded",
+  "plugins.summary.scanned": "Scanned",
+  "plugins.summary.invalid": "Invalid",
+  "plugins.summary.disabled": "Disabled",
+  "plugins.loaded.title": "Active plugins",
+  "plugins.loaded.empty": "No plugins loaded.",
+  "plugins.diagnostics.title": "Diagnostics",
+  "plugins.empty.body": "No plugins installed. Drop manifests into the configured discovery paths and restart the daemon.",
 
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Settings",

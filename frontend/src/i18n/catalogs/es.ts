@@ -737,6 +737,18 @@ const es = {
   "confirm.delete_title": "Eliminar",
   "confirm.delete_body": "Esta acción no se puede deshacer.",
 
+  // ── Tenants (Phase 90.3.21) ──────────────────────────────
+  "tenants.title": "Empresas",
+  "tenants.col.id": "ID",
+  "tenants.col.name": "Nombre",
+  "tenants.col.status": "Estado",
+  "tenants.col.active": "Activa",
+  "tenants.status.active": "Activa",
+  "tenants.status.inactive": "Inactiva",
+  "tenants.row.viewing": "Viendo",
+  "tenants.empty.body": "No hay empresas autorizadas para este token.",
+  "tenants.deferred.crud_note": "El operador de configuración (crear / renombrar / desactivar) llegará cuando los wrappers admin tenants/* estén expuestos en api/tenants.ts.",
+
   // ── MCP servers (Phase 90.3.19 — placeholder) ───────────
   "mcp_servers.title": "Servidores MCP",
   "mcp_servers.deferred.title": "Endpoints MCP pendientes",

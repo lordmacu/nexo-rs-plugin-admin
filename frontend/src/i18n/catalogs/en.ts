@@ -733,6 +733,18 @@ const en = {
   "confirm.delete_title": "Delete",
   "confirm.delete_body": "This action cannot be undone.",
 
+  // ── Tenants (Phase 90.3.21) ──────────────────────────────
+  "tenants.title": "Tenants",
+  "tenants.col.id": "ID",
+  "tenants.col.name": "Name",
+  "tenants.col.status": "Status",
+  "tenants.col.active": "Active",
+  "tenants.status.active": "Active",
+  "tenants.status.inactive": "Inactive",
+  "tenants.row.viewing": "Viewing",
+  "tenants.empty.body": "No tenants authorised for this token.",
+  "tenants.deferred.crud_note": "Tenant configuration (create / rename / deactivate) lands when the admin tenants/* wrappers ship in api/tenants.ts.",
+
   // ── MCP servers (Phase 90.3.19 — placeholder) ───────────
   "mcp_servers.title": "MCP servers",
   "mcp_servers.deferred.title": "MCP endpoints pending",

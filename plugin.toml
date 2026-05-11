@@ -17,7 +17,7 @@ manifest_version = 2
 
 [plugin]
 id          = "admin"
-version     = "0.1.0"
+version     = "0.1.12"
 name        = "Admin UI"
 description = "Official framework administration plugin (agents, skills, channels, LLM providers, memory, plugins, MCP, observability)"
 min_nexo_version = ">=0.1.0"

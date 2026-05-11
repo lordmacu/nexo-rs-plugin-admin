@@ -1,0 +1,120 @@
+# Tag push (`v0.1.12`, …) builds the React frontend, embeds it into
+# the Rust binary (rust-embed), cross-builds for every target the
+# `nexo-rs` daemon ships for, and creates a GitHub Release in the
+# layout `nexo plugin install` expects:
+#   * bare `nexo-plugin.toml` at release root (this repo's manifest
+#     lives in `plugin.toml`; we ship it under the canonical name)
+#   * `<plugin_id>-<version>-<target>.tar.gz` containing
+#     `nexo-plugin.toml` + `bin/<plugin_id>` at archive root
+#   * `<...>.tar.gz.sha256` sidecar with the hex digest
+#
+# Targets: x86_64/aarch64 musl static (via cargo-zigbuild, matching
+# `nexo-rs`'s own release) + x86_64/aarch64 macOS. All Rust deps are
+# on crates.io — no proyecto sibling checkout needed. Operators run
+# `nexo plugin install lordmacu/nexo-rs-plugin-admin`
+# (or `cargo install nexo-plugin-admin`).
+
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+          - os: macos-14
+            target: x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: nexo-rs-plugin-admin
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build the React frontend (embedded via rust-embed)
+        working-directory: nexo-rs-plugin-admin/frontend
+        run: |
+          npm ci
+          npm run build
+
+      # ring's cc-rs build.rs calls `*-linux-musl-gcc` for the musl
+      # targets (rustls pulls ring); install musl-tools to satisfy it.
+      - name: Install musl-tools
+        if: contains(matrix.target, 'linux-musl')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Install zig (pinned)
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: "0.13.0"
+      - name: Install cargo-zigbuild
+        run: cargo install cargo-zigbuild --locked --version 0.22.3
+
+      - name: cargo zigbuild --release
+        working-directory: nexo-rs-plugin-admin
+        run: cargo zigbuild --release --target ${{ matrix.target }}
+
+      - name: package (nexo plugin install layout)
+        working-directory: nexo-rs-plugin-admin
+        run: |
+          set -euo pipefail
+          mkdir -p dist/staging/bin
+          cp "target/${{ matrix.target }}/release/nexo-plugin-admin" \
+             dist/staging/bin/admin
+          # This repo's manifest is `plugin.toml`; `nexo plugin install`
+          # looks for `nexo-plugin.toml`, so ship it under that name.
+          cp plugin.toml dist/staging/nexo-plugin.toml
+
+          PLUGIN_ID=$(grep -E '^id[[:space:]]*=' plugin.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          VERSION=$(grep -E '^version[[:space:]]*=' plugin.toml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          TARBALL="${PLUGIN_ID}-${VERSION}-${{ matrix.target }}.tar.gz"
+
+          tar czf "dist/${TARBALL}" -C dist/staging bin/admin nexo-plugin.toml
+          { sha256sum "dist/${TARBALL}" 2>/dev/null || shasum -a 256 "dist/${TARBALL}"; } | awk '{print $1}' > "dist/${TARBALL}.sha256"
+          cp plugin.toml dist/nexo-plugin.toml
+          ls -la dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: |
+            nexo-rs-plugin-admin/dist/*.tar.gz
+            nexo-rs-plugin-admin/dist/*.tar.gz.sha256
+            nexo-rs-plugin-admin/dist/nexo-plugin.toml
+
+  release:
+    name: github release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/**/*.tar.gz
+            dist/**/*.tar.gz.sha256
+            dist/**/nexo-plugin.toml
+          generate_release_notes: true

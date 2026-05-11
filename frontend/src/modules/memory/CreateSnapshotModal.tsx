@@ -11,6 +11,7 @@ import { Lock, X } from "lucide-react";
 
 import { useMemory } from "../../store/memory";
 import { useT } from "../../i18n";
+import { useEscapeKey, useBackdropClose } from "../../lib/useDialogClose";
 
 interface Props {
   onClose: () => void;
@@ -27,6 +28,16 @@ export default function CreateSnapshotModal({ onClose, onCreated }: Props) {
 
   const canSubmit = !createInFlight;
 
+  // Phase 90 audit fix — Escape + backdrop-click close. Disabled
+  // mid-flight so a stray click can't dismiss the modal during
+  // the create RPC (operator would lose the spinner + error
+  // state).
+  useEscapeKey({ onClose, disabled: createInFlight });
+  const handleBackdropClick = useBackdropClose({
+    onClose,
+    disabled: createInFlight,
+  });
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setError(null);
@@ -39,7 +50,10 @@ export default function CreateSnapshotModal({ onClose, onCreated }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={handleBackdropClick}
+    >
       <div className="w-full max-w-md rounded-lg bg-panel p-6 shadow-xl">
         <header className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-text-primary">
@@ -47,9 +61,10 @@ export default function CreateSnapshotModal({ onClose, onCreated }: Props) {
           </h2>
           <button
             type="button"
-            className="rounded p-1 text-text-secondary hover:bg-panel-hover"
+            className="rounded p-1 text-text-secondary hover:bg-panel-hover disabled:opacity-50"
             onClick={onClose}
             aria-label="close"
+            disabled={createInFlight}
           >
             <X size={16} />
           </button>

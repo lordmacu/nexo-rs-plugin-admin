@@ -11,6 +11,8 @@ import { useMemory } from "../../store/memory";
 import { useT } from "../../i18n";
 import RestoreReportTable from "./RestoreReportTable";
 import type { RestoreReport, SnapshotMeta } from "../../api/memory";
+import { confirmPrefix, confirmPrefixMatches } from "../../lib/confirmPrefix";
+import { useEscapeKey, useBackdropClose } from "../../lib/useDialogClose";
 
 interface Props {
   snapshot: SnapshotMeta;
@@ -53,8 +55,10 @@ export default function RestoreSnapshotModal({
     };
   }, [clearLastRestoreReport]);
 
-  const idPrefix = snapshot.id.slice(0, 8);
-  const confirmOk = confirmText.trim() === idPrefix;
+  // Phase 90 audit fix — shared `confirmPrefix` helper aligns
+  // this modal with RestartPluginModal's confirmation pattern.
+  const idPrefix = confirmPrefix(snapshot.id);
+  const confirmOk = confirmPrefixMatches(confirmText, snapshot.id);
   const canPreview = !restoreInFlight && appliedReport === null;
   const canApply =
     previewed && confirmOk && !restoreInFlight && appliedReport === null;
@@ -93,8 +97,23 @@ export default function RestoreSnapshotModal({
     onApplied();
   };
 
+  // Phase 90 audit fix — Escape + backdrop-click close. Routes
+  // to handleDoneClose when the post-apply view is showing
+  // (so dismissing fires the same refresh path as the Close
+  // button); otherwise routes to onClose. Disabled mid-flight.
+  const dismissAction =
+    appliedReport !== null ? handleDoneClose : onClose;
+  useEscapeKey({ onClose: dismissAction, disabled: restoreInFlight });
+  const handleBackdropClick = useBackdropClose({
+    onClose: dismissAction,
+    disabled: restoreInFlight,
+  });
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-panel p-6 shadow-xl">
         <header className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-text-primary">

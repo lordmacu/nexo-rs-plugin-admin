@@ -52,6 +52,14 @@ export default function PluginsMain() {
   const loadedIds = report.loaded_ids ?? [];
   const initOutcomes = report.init_outcomes ?? {};
   const diagnostics = report.diagnostics ?? [];
+  // Phase 90 audit fix — surface the 5/9 PluginDiscoveryReport
+  // fields the prior UI ignored. Operators previously had to
+  // drop to `agent doctor plugins --json` for these.
+  const duplicates = report.duplicates ?? 0;
+  const contributedAgents = report.contributed_agents_per_plugin ?? {};
+  const contributedSkills = report.contributed_skills_per_plugin ?? {};
+  const capabilityGates = report.plugin_capability_gates ?? {};
+  const unmetRequired = (report.unmet_required_capabilities ?? []) as unknown[];
 
   return (
     <div className="flex h-full flex-col bg-surface">
@@ -127,8 +135,9 @@ export default function PluginsMain() {
       )}
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Summary tiles */}
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {/* Summary tiles. Phase 90 audit fix — added duplicates
+            tile so the 5th doctor field surfaces inline. */}
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <SummaryTile
             label={t("plugins.summary.loaded")}
             value={(report.loaded_ids ?? []).length}
@@ -148,6 +157,11 @@ export default function PluginsMain() {
             label={t("plugins.summary.disabled")}
             value={report.disabled ?? 0}
             tone="default"
+          />
+          <SummaryTile
+            label={t("plugins.summary.duplicates")}
+            value={duplicates}
+            tone={duplicates > 0 ? "danger" : "default"}
           />
         </section>
 
@@ -198,6 +212,118 @@ export default function PluginsMain() {
             <ul className="divide-y">
               {diagnostics.map((d, idx) => (
                 <DiagnosticRow key={idx} diag={d} />
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Phase 90 audit fix — Unmet required capabilities. The
+            daemon's discovery walker flags every (microapp,
+            capability) pair where the manifest declares a
+            required capability that the operator never granted.
+            Plugins surface as `Failed { reason }` in init
+            outcomes; this list shows the why up front. */}
+        {unmetRequired.length > 0 && (
+          <section className="rounded-lg border border-danger/40 bg-danger-soft">
+            <header className="flex items-center gap-2 border-b border-danger/20 px-4 py-2 text-sm font-bold text-danger">
+              <AlertTriangle size={14} />
+              {t("plugins.unmet_required.title")} ({unmetRequired.length})
+            </header>
+            <ul className="divide-y divide-danger/20">
+              {unmetRequired.map((entry, idx) => (
+                <li key={idx} className="px-4 py-2 text-xs">
+                  <pre className="whitespace-pre-wrap break-all text-danger">
+                    {typeof entry === "string"
+                      ? entry
+                      : JSON.stringify(entry, null, 2)}
+                  </pre>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Phase 90 audit fix — Per-plugin contributions
+            (agents.yaml entries + skill files). Operators see
+            what ships from each plugin without reading the
+            agents.yaml manifest by hand. */}
+        {(Object.keys(contributedAgents).length > 0 ||
+          Object.keys(contributedSkills).length > 0) && (
+          <section className="rounded-lg border bg-panel">
+            <header className="flex items-center gap-2 border-b px-4 py-2 text-sm font-bold text-text-primary">
+              {t("plugins.contributions.title")}
+            </header>
+            <div className="grid grid-cols-1 gap-3 px-4 py-3 text-xs md:grid-cols-2">
+              <div>
+                <div className="mb-1 text-text-meta uppercase tracking-wide">
+                  {t("plugins.contributions.agents")}
+                </div>
+                {Object.keys(contributedAgents).length === 0 ? (
+                  <div className="text-text-secondary">
+                    {t("plugins.contributions.empty")}
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {Object.entries(contributedAgents).map(([plugin, ids]) => (
+                      <li key={plugin}>
+                        <span className="font-mono text-text-primary">
+                          {plugin}
+                        </span>{" "}
+                        <span className="text-text-secondary">
+                          {ids.join(", ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <div className="mb-1 text-text-meta uppercase tracking-wide">
+                  {t("plugins.contributions.skills")}
+                </div>
+                {Object.keys(contributedSkills).length === 0 ? (
+                  <div className="text-text-secondary">
+                    {t("plugins.contributions.empty")}
+                  </div>
+                ) : (
+                  <ul className="space-y-1">
+                    {Object.entries(contributedSkills).map(([plugin, ids]) => (
+                      <li key={plugin}>
+                        <span className="font-mono text-text-primary">
+                          {plugin}
+                        </span>{" "}
+                        <span className="text-text-secondary">
+                          {ids.join(", ")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Phase 90 audit fix — Plugin capability gates declared
+            in the manifest. Each entry exposes the env-var name
+            the operator can flip to disable the capability. The
+            payload shape is plugin-defined (open object); we
+            render it as JSON so the operator sees the full
+            contract without dropping to the CLI. */}
+        {Object.keys(capabilityGates).length > 0 && (
+          <section className="rounded-lg border bg-panel">
+            <header className="flex items-center gap-2 border-b px-4 py-2 text-sm font-bold text-text-primary">
+              {t("plugins.capability_gates.title")} (
+              {Object.keys(capabilityGates).length})
+            </header>
+            <ul className="divide-y">
+              {Object.entries(capabilityGates).map(([plugin, gate]) => (
+                <li key={plugin} className="px-4 py-2 text-xs">
+                  <div className="mb-1 font-mono text-text-primary">{plugin}</div>
+                  <pre className="whitespace-pre-wrap break-all text-text-secondary">
+                    {JSON.stringify(gate, null, 2)}
+                  </pre>
+                </li>
               ))}
             </ul>
           </section>

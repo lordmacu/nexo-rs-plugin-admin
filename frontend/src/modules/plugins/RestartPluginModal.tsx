@@ -9,6 +9,8 @@ import { AlertTriangle, RotateCcw, X } from "lucide-react";
 
 import { usePluginsDoctor } from "../../store/plugins";
 import { useT } from "../../i18n";
+import { confirmPrefix, confirmPrefixMatches } from "../../lib/confirmPrefix";
+import { useEscapeKey, useBackdropClose } from "../../lib/useDialogClose";
 
 interface Props {
   pluginId: string;
@@ -26,8 +28,21 @@ export default function RestartPluginModal({
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const idPrefix = pluginId.slice(0, Math.min(8, pluginId.length));
-  const confirmOk = confirmText.trim() === idPrefix;
+  // Phase 90 audit fix — shared `confirmPrefix` helper. Same
+  // 8-char default as RestoreSnapshotModal so operators don't
+  // have to learn two patterns.
+  const idPrefix = confirmPrefix(pluginId);
+  const confirmOk = confirmPrefixMatches(confirmText, pluginId);
+
+  // Phase 90 audit fix — Escape + backdrop-click close. Disabled
+  // mid-flight (60s upper bound on the spawn handshake) so a
+  // stray click can't dismiss the modal and orphan operator
+  // attention.
+  useEscapeKey({ onClose, disabled: restartInFlight === pluginId });
+  const handleBackdropClick = useBackdropClose({
+    onClose,
+    disabled: restartInFlight === pluginId,
+  });
   const inFlight = restartInFlight === pluginId;
   const canApply = confirmOk && !inFlight;
 
@@ -43,7 +58,10 @@ export default function RestartPluginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="w-full max-w-md rounded-lg bg-panel p-6 shadow-xl">
         <header className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-text-primary">

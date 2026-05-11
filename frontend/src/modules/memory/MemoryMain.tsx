@@ -30,6 +30,20 @@ export default function MemoryMain() {
   } = useMemory();
   const [createOpen, setCreateOpen] = useState(false);
   const [restoreFor, setRestoreFor] = useState<SnapshotMeta | null>(null);
+  // Phase 90 audit fix — snapshot list expand toggle. Default
+  // collapses to the 5 most recent (the prior hard-cap) so the
+  // panel stays compact; operators with > 5 snapshots can
+  // expand to see (and restore / delete) older bundles
+  // without dropping to the CLI.
+  const [snapshotsExpanded, setSnapshotsExpanded] = useState(false);
+  const SNAPSHOT_COLLAPSED_LIMIT = 5;
+  const visibleSnapshots = snapshotsExpanded
+    ? snapshots
+    : snapshots.slice(0, SNAPSHOT_COLLAPSED_LIMIT);
+  const hiddenCount = Math.max(
+    0,
+    snapshots.length - SNAPSHOT_COLLAPSED_LIMIT,
+  );
 
   const handleSnapshotDelete = async (id: string) => {
     if (!window.confirm(t("memory.snapshots.delete_confirm", { id: id.slice(0, 8) })))
@@ -131,7 +145,7 @@ export default function MemoryMain() {
             </p>
           ) : (
             <ul className="space-y-1">
-              {snapshots.slice(0, 5).map((s) => (
+              {visibleSnapshots.map((s) => (
                 <li
                   key={s.id}
                   className="flex items-center justify-between gap-3 text-xs"
@@ -173,13 +187,31 @@ export default function MemoryMain() {
                   </div>
                 </li>
               ))}
-              {snapshots.length > 5 && (
-                <li className="text-xs text-text-meta">
-                  {t("memory.snapshots.more", {
-                    count: String(snapshots.length - 5),
-                  })}
+              {hiddenCount > 0 && !snapshotsExpanded && (
+                <li>
+                  <button
+                    type="button"
+                    className="rounded px-2 py-0.5 text-xs text-accent hover:bg-panel-hover"
+                    onClick={() => setSnapshotsExpanded(true)}
+                  >
+                    {t("memory.snapshots.show_all", {
+                      count: String(hiddenCount),
+                    })}
+                  </button>
                 </li>
               )}
+              {snapshotsExpanded &&
+                snapshots.length > SNAPSHOT_COLLAPSED_LIMIT && (
+                  <li>
+                    <button
+                      type="button"
+                      className="rounded px-2 py-0.5 text-xs text-text-meta hover:bg-panel-hover"
+                      onClick={() => setSnapshotsExpanded(false)}
+                    >
+                      {t("memory.snapshots.collapse")}
+                    </button>
+                  </li>
+                )}
             </ul>
           )}
         </section>

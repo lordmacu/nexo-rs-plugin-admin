@@ -8,7 +8,14 @@
 //   - Diagnostics (Warn/Error from discovery + capability aggregation)
 
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, CheckCircle2, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
+  RotateCcw,
+  X,
+} from "lucide-react";
 
 import { usePluginsDoctor } from "../../store/plugins";
 import type { PluginDiagnostic } from "../../api/plugin_doctor";
@@ -17,7 +24,17 @@ import RestartPluginModal from "./RestartPluginModal";
 
 export default function PluginsMain() {
   const t = useT();
-  const { data, isLoading, error, reload } = usePluginsDoctor();
+  const {
+    data,
+    isLoading,
+    error,
+    reload,
+    // Phase 90 audit fix — surface the last restart report inline
+    // so the operator sees previous_uptime_ms + new_pid +
+    // restarted_at without dropping to firehose / journal logs.
+    lastRestartReport,
+    clearLastRestartReport,
+  } = usePluginsDoctor();
   const [restartTarget, setRestartTarget] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,6 +80,49 @@ export default function PluginsMain() {
       {error !== null && (
         <div className="border-b border-danger-soft bg-danger-soft px-6 py-3 text-sm text-danger">
           {error}
+        </div>
+      )}
+
+      {/* Phase 90 audit fix — lastRestartReport banner. Operator
+          sees previous_uptime_ms + new_pid + restarted_at after a
+          successful restart without scraping logs. Dismissible. */}
+      {lastRestartReport !== null && (
+        <div className="flex items-center justify-between gap-3 border-b border-success/40 bg-success-soft px-6 py-2 text-xs">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-success">
+            <span className="font-medium">
+              {t("plugins.restart.report.banner", {
+                plugin_id: lastRestartReport.plugin_id,
+              })}
+            </span>
+            <span className="text-text-secondary">
+              {t("plugins.restart.report.previous_uptime", {
+                ms: lastRestartReport.previous_uptime_ms.toLocaleString(),
+              })}
+            </span>
+            {lastRestartReport.new_pid !== undefined &&
+              lastRestartReport.new_pid !== null && (
+                <span className="text-text-secondary">
+                  {t("plugins.restart.report.new_pid", {
+                    pid: lastRestartReport.new_pid,
+                  })}
+                </span>
+              )}
+            <span className="text-text-meta">
+              {t("plugins.restart.report.restarted_at", {
+                ts: new Date(
+                  lastRestartReport.restarted_at_ms,
+                ).toLocaleTimeString(),
+              })}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="rounded p-1 text-success hover:bg-success/20"
+            onClick={() => clearLastRestartReport()}
+            aria-label={t("plugins.restart.report.dismiss")}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 

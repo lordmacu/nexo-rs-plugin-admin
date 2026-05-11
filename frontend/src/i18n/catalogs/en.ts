@@ -852,6 +852,9 @@ const en = {
   "memory.snapshots.restore.encrypted_note": "This bundle is encrypted; the daemon will decrypt with the configured identity file.",
   "memory.snapshots.restore.report_title_preview": "Restore preview (dry run)",
   "memory.snapshots.restore.report_title_applied": "Restore applied",
+  "memory.snapshots.restore.done_title": "Restore complete",
+  "memory.snapshots.restore.done_intro": "The pre-restore snapshot was captured automatically and is available in the snapshot list — use it to roll back if needed.",
+  "memory.snapshots.restore.close": "Close",
   "memory.snapshots.restore.field.snapshot_id": "Snapshot ID",
   "memory.snapshots.restore.field.tenant": "Tenant",
   "memory.snapshots.restore.field.label": "Label",
@@ -883,6 +886,11 @@ const en = {
   "plugins.restart.warning": "The current child process will be terminated. In-flight requests will fail with a retry error. Up to 60s for the new spawn + handshake.",
   "plugins.restart.confirm_prompt": "Type `{prefix}` to confirm.",
   "plugins.restart.field.plugin_id": "Plugin ID",
+  "plugins.restart.report.banner": "Restart applied to `{plugin_id}`",
+  "plugins.restart.report.previous_uptime": "Previous uptime: {ms} ms",
+  "plugins.restart.report.new_pid": "New PID: {pid}",
+  "plugins.restart.report.restarted_at": "At {ts}",
+  "plugins.restart.report.dismiss": "Dismiss",
 
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Settings",

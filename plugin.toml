@@ -63,10 +63,17 @@ required = [
     "escalations_resolve",
     # Phase 83.12.audit-page — read access to microapp_admin_audit.
     "audit_read",
-    # Memory query — Phase 90.x.memory (snapshot deferred).
+    # Memory query — Phase 90.x.memory.
     "memory_query",
+    # Memory snapshot CRUD (list / delete / create / restore) —
+    # Phase 90.x.memory-snapshot + .create-restore.
+    "memory_snapshot",
     # Plugin doctor / capability inventory — Phase 81.11 + 90.x.plugins.
     "plugin_doctor",
+    # Plugin manual restart (force-kill + re-spawn) — Phase 81.21.b.b.
+    # Distinct from read-only `plugin_doctor`; needed for the
+    # per-row "Restart" button on the plugins page.
+    "plugin_restart",
     # Multi-tenant CRUD — Phase 83.8.12.
     "tenants_crud",
     # MCP server CRUD — Phase 90.x.mcp.

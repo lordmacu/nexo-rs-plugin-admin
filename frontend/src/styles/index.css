@@ -1,11 +1,11 @@
+/* Pull the lib's CSS vars (`--nexo-microapp-*` tokens) first so the
+   cascade favours app-side re-declarations. `@import` must precede
+   every other statement (CSS spec) — keep it above @tailwind. */
+@import "@lordmacu/nexo-microapp-ui-react/styles.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Phase 83.13.theme — pull lib's CSS vars
-   (`--nexo-microapp-*` tokens) BEFORE app overrides so the
-   cascade favours app-side re-declarations of any token. */
-@import "@lordmacu/nexo-microapp-ui-react/styles.css";
 
 /* WhatsApp Web background pattern (subtle dot tile). The actual
    WA bg uses a doodle pattern; we approximate with a flat color

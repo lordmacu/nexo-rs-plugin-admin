@@ -57,6 +57,13 @@ jobs:
         with:
           node-version: "22"
 
+      # The vite alias bundles the UI kit's source directly, so its own
+      # deps (lucide-react, clsx, …) must be installed for vite to
+      # resolve the bare imports inside `nexo-rs-microapp-ui-react/src`.
+      - name: Install UI kit deps
+        working-directory: nexo-rs-microapp-ui-react
+        run: npm ci
+
       - name: Build the React frontend (embedded via rust-embed)
         working-directory: nexo-rs-plugin-admin/frontend
         run: |

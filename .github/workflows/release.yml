@@ -42,6 +42,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: nexo-rs-plugin-admin
+      # `frontend/vite.config.ts` aliases `@lordmacu/nexo-microapp-ui-react`
+      # to `../../nexo-rs-microapp-ui-react/src` — check that repo out as a
+      # sibling so the production `vite build` resolves it.
+      - name: Checkout UI kit (vite source alias)
+        uses: actions/checkout@v4
+        with:
+          repository: lordmacu/nexo-microapp-ui-react
+          path: nexo-rs-microapp-ui-react
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}

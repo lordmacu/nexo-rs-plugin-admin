@@ -8,10 +8,10 @@
 #     `nexo-plugin.toml` + `bin/<plugin_id>` at archive root
 #   * `<...>.tar.gz.sha256` sidecar with the hex digest
 #
-# Targets: x86_64/aarch64 musl static (via cargo-zigbuild, matching
-# `nexo-rs`'s own release) + x86_64/aarch64 macOS. All Rust deps are
-# on crates.io — no proyecto sibling checkout needed. Operators run
-# `nexo plugin install lordmacu/nexo-rs-plugin-admin`
+# Targets: x86_64/aarch64 musl static + x86_64/aarch64 macOS (via
+# cargo-zigbuild) + x86_64 Windows MSVC (native build on windows-latest).
+# All Rust deps are on crates.io — no proyecto sibling checkout needed.
+# Operators run `nexo plugin install lordmacu/nexo-rs-plugin-admin`
 # (or `cargo install nexo-plugin-admin`).
 
 name: release
@@ -37,6 +37,8 @@ jobs:
             target: x86_64-apple-darwin
           - os: macos-14
             target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
     steps:
       - name: Checkout plugin
         uses: actions/checkout@v4
@@ -87,23 +89,32 @@ jobs:
           echo "CFLAGS_aarch64_unknown_linux_musl=${MUSL_CFLAGS}" >> "$GITHUB_ENV"
 
       - name: Install zig (pinned)
+        if: ${{ !contains(matrix.target, 'windows') }}
         uses: goto-bus-stop/setup-zig@v2
         with:
           version: "0.13.0"
       - name: Install cargo-zigbuild
+        if: ${{ !contains(matrix.target, 'windows') }}
         run: cargo install cargo-zigbuild --locked --version 0.22.3
 
-      - name: cargo zigbuild --release
+      - name: Build (Unix — cargo-zigbuild)
+        if: ${{ !contains(matrix.target, 'windows') }}
         working-directory: nexo-rs-plugin-admin
         run: cargo zigbuild --release --target ${{ matrix.target }}
+      - name: Build (Windows — native cargo)
+        if: contains(matrix.target, 'windows')
+        working-directory: nexo-rs-plugin-admin
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: package (nexo plugin install layout)
         working-directory: nexo-rs-plugin-admin
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p dist/staging/bin
-          cp "target/${{ matrix.target }}/release/nexo-plugin-admin" \
-             dist/staging/bin/admin
+          BIN="target/${{ matrix.target }}/release/nexo-plugin-admin"
+          [ -f "${BIN}.exe" ] && BIN="${BIN}.exe"
+          cp "$BIN" dist/staging/bin/admin
           # This repo's manifest is `plugin.toml`; `nexo plugin install`
           # looks for `nexo-plugin.toml`, so ship it under that name.
           cp plugin.toml dist/staging/nexo-plugin.toml

@@ -19,6 +19,5 @@ export const manifest: ModuleManifest = {
     order: 40,
   },
   routes: [{ path: "", element: <LlmKeysMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

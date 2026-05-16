@@ -18,6 +18,5 @@ export const manifest: ModuleManifest = {
     order: 45,
   },
   routes: [{ path: "", element: <ChannelsMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

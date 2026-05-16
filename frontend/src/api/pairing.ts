@@ -11,8 +11,28 @@
 // connection on terminal state (`linked`, `expired`,
 // `cancelled`) so the cleanup path is deterministic.
 
+import { adminCall } from "./admin";
 import { useAuth } from "../store/auth";
 import type { PairingStatus } from "./types";
+import type {
+  PairingChannelsRequest,
+  PairingChannelsResponse,
+} from "./types.gen";
+
+/** Phase 81.30 — plugin-driven pairing UI descriptor.
+ *  Returns the catalog of pair-able channels (manifest-declared
+ *  `[plugin.pairing]` sections) joined with linked credentials.
+ *  The wizard renders its selector + per-channel modal entirely
+ *  from this response. */
+export async function listPairingChannels(
+  locale: string,
+): Promise<PairingChannelsResponse> {
+  const req: PairingChannelsRequest = { locale };
+  return adminCall<PairingChannelsResponse>(
+    "nexo/admin/pairing/channels",
+    req as unknown as Record<string, unknown>,
+  );
+}
 
 interface SubscribeOpts {
   challenge_id: string;

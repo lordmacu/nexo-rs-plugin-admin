@@ -17,6 +17,7 @@ import ToastHost from "./components/ToastHost";
 import { fetchBootstrap } from "./api/onboarding";
 import type { BootstrapState } from "./api/types";
 import { useAuth } from "./store/auth";
+import { useBootstrap, hasAgentWithInstance } from "./store/bootstrap";
 import { useCmdk } from "./store/cmdk";
 import { ShellRoot, buildShellRoutes } from "./shell/ShellRoot";
 import { ModuleRegistry } from "./shell/ModuleRegistry";
@@ -143,7 +144,16 @@ function useMemoizedRegistry(glob: Record<string, unknown>, tenantId: string) {
 
 function RootRedirect() {
   const token = useAuth((s) => s.token);
-  return <Navigate to={token ? "/m/chats" : "/login"} replace />;
+  // Subscribe to the published bootstrap snapshot so the
+  // landing target reacts once the gate resolves. When no
+  // agent has a paired instance yet the chats rail entry is
+  // hidden, so sending the operator to /m/chats would dump
+  // them on a stub page — route to /m/agents instead so they
+  // land on the surface where they can pair a device.
+  const bootstrap = useBootstrap((s) => s.bootstrap);
+  if (!token) return <Navigate to="/login" replace />;
+  const target = hasAgentWithInstance(bootstrap) ? "/m/chats" : "/m/agents";
+  return <Navigate to={target} replace />;
 }
 
 /** Legacy URL redirect that preserves the query string + hash —
@@ -218,10 +228,23 @@ function BootstrapGate({ children }: { children: React.ReactNode }) {
     try {
       const b = await fetchBootstrap();
       setBootstrap(b);
+      // Publish to the global store so Rail + chats Sidebar
+      // can gate visibility / filter conversations without
+      // re-fetching the snapshot themselves.
+      useBootstrap.getState().setBootstrap(b);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
+  }, []);
+
+  // Wipe the published snapshot on unmount so a fresh login
+  // doesn't start with stale paired_devices from the previous
+  // operator's session.
+  useEffect(() => {
+    return () => {
+      useBootstrap.getState().setBootstrap(null);
+    };
   }, []);
 
   useEffect(() => {

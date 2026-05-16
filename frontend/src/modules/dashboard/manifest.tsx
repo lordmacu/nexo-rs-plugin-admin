@@ -23,6 +23,5 @@ export const manifest: ModuleManifest = {
     order: 10,
   },
   routes: [{ path: "", element: <DashboardMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

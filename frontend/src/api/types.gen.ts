@@ -72,7 +72,7 @@ result: AdminAuditResult,
  */
 duration_ms: number, 
 /**
- * Phase 83.8.12.7 — tenant scope for the call. Sniffed from
+ * Tenant scope for the call. Sniffed from
  * `params.tenant_id` (string) when present; legacy rows /
  * non-tenant-scoped calls (echo, pairing, credentials)
  * leave it `null`.
@@ -123,7 +123,7 @@ sender_id?: string | null,
  */
 source_plugin: string, 
 /**
- * Phase 83.8.12 — owning tenant. `None` for agents
+ * Owning tenant. `None` for agents
  * predating multi-tenant. Firehose subscribers filter
  * on this without re-querying agents.yaml.
  */
@@ -172,7 +172,7 @@ urgency: EscalationUrgency,
  */
 requested_at_ms: number, 
 /**
- * Phase 83.8.12 — owning tenant; `None` for legacy /
+ * Owning tenant; `None` for legacy /
  * single-tenant deployments. Firehose subscribers route
  * per-tenant without re-querying `agents.yaml`.
  */
@@ -195,7 +195,7 @@ resolved_at_ms: number,
  */
 by: ResolvedBy, 
 /**
- * Phase 83.8.12 — owning tenant. Mirrors the
+ * Owning tenant. Mirrors the
  * `Requested` shape so the pair stays
  * shape-symmetrical.
  */
@@ -222,7 +222,7 @@ new_state: ProcessingControlState,
  */
 at_ms: number, 
 /**
- * Phase 83.8.12 — owning tenant. `None` for legacy /
+ * Owning tenant. `None` for legacy /
  * single-tenant deployments.
  */
 tenant_id?: string | null, } | { "kind": "security_event", } & ({ "security_kind": "token_rotated", 
@@ -278,7 +278,7 @@ at_ms: number,
  */
 agent_id?: string | null, 
 /**
- * Phase 83.8.12 — owning tenant. `None` for legacy /
+ * Owning tenant. `None` for legacy /
  * single-tenant deployments.
  */
 tenant_id?: string | null, } | { "kind": "whatsapp_bot_message", 
@@ -387,8 +387,8 @@ next_offset?: number | null, };
 /**
  * Identifies which inbound binding a tool call originated from.
  *
- * Stamped on every tool call dispatched to a Phase 11 stdio
- * extension or a Phase 12 MCP server (under `params._meta.nexo.binding`).
+ * Stamped on every tool call dispatched to a stdio extension or
+ * an MCP server (under `params._meta.nexo.binding`).
  * A microapp reads it to route work to the correct tenant /
  * channel / account.
  *
@@ -397,7 +397,7 @@ next_offset?: number | null, };
  * (does NOT depend on the binding vector index).
  *
  * `mcp_channel_source` is populated when the inbound that
- * triggered the call arrived via a Phase 80.9 MCP channel
+ * triggered the call arrived via an MCP channel
  * server (`"slack"`, `"telegram"`, etc.), allowing a tool to
  * distinguish "telegram-binding answered via MCP slack server"
  * from "telegram-binding answered via the native Telegram
@@ -443,21 +443,21 @@ account_id: string | null,
  */
 binding_id: string | null, 
 /**
- * Phase 80.9 — MCP channel server name when the inbound
+ * MCP channel server name when the inbound
  * arrived via `notifications/nexo/channel`. `None` for
  * native-channel inbounds. Examples: `"slack"`,
  * `"telegram"`, `"imessage"`.
  */
 mcp_channel_source: string | null, 
 /**
- * Phase 82.4 — event-subscriber metadata when the agent's
+ * Event-subscriber metadata when the agent's
  * inbound was synthesised from a NATS event (subject pattern
  * match). `None` for human-message turns / native-channel
  * inbounds.
  */
 event_source: EventSourceMeta | null, 
 /**
- * Phase 83.8.12 — SaaS tenant (tenant) key. `None` for
+ * SaaS tenant key. `None` for
  * agents that predate the multi-tenant model
  * (`agents.yaml.<id>` without an `tenant_id` field).
  * Multi-tenant filtering across admin RPC + microapp tools
@@ -466,7 +466,7 @@ event_source: EventSourceMeta | null,
  */
 tenant_id?: string | null, 
 /**
- * Phase 81.19.b locale follow-up item 6 — resolved BCP-47
+ * Resolved BCP-47
  * locale for this binding (`InboundBinding.language` over
  * `AgentConfig.language`). When present, the SDK's STT
  * inbound transform handler trims to ISO-639-1 and passes
@@ -539,8 +539,8 @@ export type InboundKind = "external_user" | "internal_system" | "inter_session";
  * Per-turn metadata about the inbound message that triggered the
  * agent turn.
  *
- * Stamped on every tool call dispatched to a Phase 11 stdio
- * extension or a Phase 12 MCP server (under
+ * Stamped on every tool call dispatched to a stdio
+ * extension or an MCP server (under
  * `params._meta.nexo.inbound`). All fields except `kind` are
  * optional; consumers must tolerate absence and branch
  * gracefully.
@@ -779,7 +779,7 @@ content: string,
  */
 tags: Array<string>, 
 /**
- * Auto-derived concept tags (Phase 10.7 derivation).
+ * Auto-derived concept tags.
  */
 concept_tags: Array<string>, 
 /**
@@ -921,7 +921,7 @@ tenant: string, };
 /**
  * Response for `nexo/admin/memory/list_snapshots`.
  *
- * SHAPE NOTE (0.1.12, Phase 90.x.memory-snapshot.create-restore):
+ * SHAPE NOTE (0.1.12):
  * the `snapshots` field is unchanged but the response gained
  * `encryption_available`. Older clients that previously
  * deserialized the response as `Vec<SnapshotMetaWire>` directly
@@ -1034,8 +1034,8 @@ stack_trace?: string | null, };
 
 /**
  * Kind discriminator. `#[non_exhaustive]` so future kinds
- * (e.g. `RateLimitTripped` once 83.16's respawn-throttle
- * follow-up ships) can land non-major.
+ * (e.g. a `RateLimitTripped` once a respawn-throttle ships)
+ * can land non-major.
  */
 export type MicroappErrorKind = "init_timeout" | "handler_panic" | "exit" | "capability_denied";
 
@@ -1088,6 +1088,286 @@ conversation_key: string,
  */
 language?: string | null, };
 
+// ─── PairingChannelField.ts ────────────────────────────────────
+
+/**
+ * One field inside a `Form`-flow modal.
+ */
+export type PairingChannelField = { 
+/**
+ * Stable key (submitted to `credentials/register` verbatim).
+ */
+name: string, 
+/**
+ * Operator-visible label.
+ */
+label: string, 
+/**
+ * Inline help text.
+ */
+help?: string | null, 
+/**
+ * `true` ⇒ render as `<input type="password">`.
+ */
+sensitive: boolean, 
+/**
+ * Optional placeholder text.
+ */
+placeholder?: string | null, 
+/**
+ * Admin blocks submit until the operator types a non-empty
+ * value.
+ */
+required: boolean, };
+
+// ─── PairingChannelInfo.ts ────────────────────────────────────
+
+/**
+ * One pair-able channel as exposed to the admin.
+ */
+export type PairingChannelInfo = { 
+/**
+ * Stable channel id — matches `PairingStartInput::channel`
+ * verbatim. Typically equals the plugin id.
+ */
+channel: string, 
+/**
+ * Pairing flow kind. Drives which modal branch the admin
+ * renders.
+ */
+kind: PairingChannelKind, 
+/**
+ * Operator-visible label (`[plugin.pairing] label`, falling
+ * back to `plugin.name`).
+ */
+label: string, 
+/**
+ * Locale-resolved instruction text. Empty string when the
+ * plugin did not ship any instructions block — the admin
+ * renders nothing in that case.
+ */
+instructions: string, 
+/**
+ * Form-flow only — field descriptors to render inside the
+ * modal. Empty for the other kinds.
+ */
+fields?: Array<PairingChannelField>, 
+/**
+ * Instances already linked (matched against `credentials/list`).
+ * Empty = channel has no credentials registered yet.
+ */
+linked_instances?: Array<string>, 
+/**
+ * Custom-flow only — JSON-RPC notify method the admin should
+ * subscribe to (`nexo/notify/<rpc_namespace>/status_changed`).
+ * `None` for non-custom kinds.
+ */
+notify_method?: string | null, 
+/**
+ * Phase 81.30 follow-up #4 — name of the form field whose
+ * value the admin should treat as the credential `instance`
+ * when calling `credentials/register`. `None` ⇒ the admin
+ * falls back to the literal `"instance"`. Only populated
+ * when `kind = "form"` and the plugin declared it.
+ */
+instance_field?: string | null, };
+
+// ─── PairingChannelKind.ts ────────────────────────────────────
+
+/**
+ * Pairing flow kind — wire mirror of
+ * `nexo_plugin_manifest::PairingKind`. Kept as a separate enum
+ * so the wire crate doesn't depend on `nexo-plugin-manifest`.
+ */
+export type PairingChannelKind = "qr" | "form" | "info" | "custom";
+
+// ─── PairingChannelsRequest.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/pairing/channels`.
+ *
+ * Currently only carries an optional BCP-47 locale tag used to
+ * resolve the operator-visible `instructions` string. Future
+ * filters (tenant scope, plugin id allowlist) land here without
+ * breaking the wire envelope.
+ */
+export type PairingChannelsRequest = { 
+/**
+ * BCP-47 locale tag (`"es"`, `"en"`, `"pt-BR"`). When `None`
+ * the handler defaults to `"en"`. Resolution rule:
+ * exact match → base language → `"en"` → first entry.
+ */
+locale?: string | null, };
+
+// ─── PairingChannelsResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/pairing/channels`.
+ *
+ * Channels are returned ordered by plugin id ascending so the
+ * admin UI stays stable across refreshes.
+ */
+export type PairingChannelsResponse = { 
+/**
+ * All channels exposed by the loaded plugins, joined with
+ * credential state.
+ */
+channels: Array<PairingChannelInfo>, };
+
+// ─── PersonaLocaleEntry.ts ────────────────────────────────────
+
+/**
+ * One `(locale, snapshot)` pair inside [`PersonaLocales::snapshots`].
+ */
+export type PersonaLocaleEntry = { 
+/**
+ * BCP-47 locale tag matching one entry in
+ * [`PersonaLocales::available`].
+ */
+locale: string, 
+/**
+ * Snapshot of the persona content for this locale.
+ */
+snapshot: PersonaSnapshot, 
+/**
+ * Phase 81.31 follow-up #2 — recommended Microsoft Edge
+ * neural voice id for this locale (e.g. `"es-AR-ElenaNeural"`,
+ * `"en-US-AriaNeural"`). Sourced from
+ * `nexo_tool_meta::locale::default_voice_for_locale`. `None`
+ * when the daemon couldn't parse the locale or no voice is
+ * mapped. Surfaced read-only — operator overrides via the
+ * per-conversation voice mode tool, not via this field.
+ */
+recommended_voice?: string | null, };
+
+// ─── PersonaLocales.ts ────────────────────────────────────
+
+/**
+ * Catalog of localised persona variants for one agent. Returned
+ * inside [`crate::admin::agents::AgentDetail::persona_locales`].
+ */
+export type PersonaLocales = { 
+/**
+ * Ordered BCP-47 locale tags. First entry is the agent's
+ * configured `language` (fallback `"en"`); remaining entries
+ * are alpha-sorted. Always non-empty.
+ */
+available: Array<string>, 
+/**
+ * Per-locale snapshot of the agent's persona content.
+ * Implemented as a `Vec<(locale, snapshot)>` so the wire
+ * stays an ordered list (matches `available`) without needing
+ * the admin to re-sort.
+ */
+snapshots: Array<PersonaLocaleEntry>, };
+
+// ─── PersonaSaveLocalizedRequest.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/persona/save_localized`.
+ */
+export type PersonaSaveLocalizedRequest = { 
+/**
+ * Target agent id. Must exist in `agents.yaml` (or a
+ * persona-shipped `agents.d/*.yaml`).
+ */
+agent_id: string, 
+/**
+ * BCP-47 locale tag. Validated server-side via
+ * `nexo_tool_meta::locale::Locale::from_str` before any
+ * filesystem write.
+ */
+locale: string, 
+/**
+ * New system_prompt for this locale. Written into
+ * `agents.d/<id>.yaml::locale_prompts[locale]` when
+ * `patch_yaml` is true.
+ */
+system_prompt: string, 
+/**
+ * New `IDENTITY.<locale>.md` content.
+ */
+identity: string, 
+/**
+ * New `SOUL.<locale>.md` content.
+ */
+soul: string, 
+/**
+ * New `USER.<locale>.md` content.
+ */
+user: string, 
+/**
+ * New `AGENTS.<locale>.md` content.
+ */
+agents: string, 
+/**
+ * When `true` (default), the daemon patches
+ * `agents.d/<id>.yaml::locale_prompts[locale]` after writing
+ * the four workspace files. Set `false` when the caller
+ * already manages the YAML separately (avoids a double-write
+ * race when followed by `agents/upsert`).
+ */
+patch_yaml: boolean, };
+
+// ─── PersonaSaveLocalizedResponse.ts ────────────────────────────────────
+
+/**
+ * Response shape for `nexo/admin/persona/save_localized`.
+ */
+export type PersonaSaveLocalizedResponse = { 
+/**
+ * Absolute paths of files successfully written, in write
+ * order. Useful for rollback by the caller and for audit
+ * logging.
+ */
+written_paths: Array<string>, 
+/**
+ * Updated [`PersonaLocales`] reflecting the new locale.
+ * Lets the admin refresh its dropdown without a second
+ * `agents/get` roundtrip.
+ */
+persona_locales: PersonaLocales, };
+
+// ─── PersonaSnapshot.ts ────────────────────────────────────
+
+/**
+ * Snapshot of one agent's persona content at a specific locale.
+ *
+ * Empty strings indicate the file is absent on disk AND no
+ * fallback is available; admin renders "(not localized)" hints
+ * for files not in [`Self::present_files`].
+ */
+export type PersonaSnapshot = { 
+/**
+ * Resolved system prompt (from `locale_prompts[locale]` or
+ * the top-level `system_prompt` fallback).
+ */
+system_prompt: string, 
+/**
+ * Content of `<workspace>/IDENTITY[.<locale>].md`.
+ */
+identity: string, 
+/**
+ * Content of `<workspace>/SOUL[.<locale>].md`.
+ */
+soul: string, 
+/**
+ * Content of `<workspace>/USER[.<locale>].md`.
+ */
+user: string, 
+/**
+ * Content of `<workspace>/AGENTS[.<locale>].md`.
+ */
+agents: string, 
+/**
+ * Subset of `{"system_prompt","identity","soul","user","agents"}`
+ * whose source actually exists for this locale (either as a
+ * locale-suffixed file or — for non-default locales — falling
+ * back to the unsuffixed file). Used by the admin to render
+ * "(not localized)" hints.
+ */
+present_files?: Array<string>, };
+
 // ─── PluginsDoctorResponse.ts ────────────────────────────────────
 
 /**
@@ -1097,7 +1377,7 @@ export type PluginsDoctorResponse = {
 /**
  * Full `PluginDiscoveryReport` JSON. Identical to what the
  * `agent doctor plugins --json` CLI emits — a stable wire
- * shape since Phase 81.11 (`doctor_render::render_json`).
+ * shape (`doctor_render::render_json`).
  */
 report: JsonValue, 
 /**
@@ -1171,8 +1451,8 @@ scope: ProcessingScope,
  */
 paused_at_ms: number, 
 /**
- * `token_hash` of the operator's bearer (Phase 82.12
- * helper) so audits can correlate without storing the
+ * `token_hash` of the operator's bearer so audits can
+ * correlate without storing the
  * cleartext token.
  */
 operator_token_hash: string, 
@@ -1208,7 +1488,7 @@ account_id: string,
  */
 contact_id: string, 
 /**
- * Phase 80.9 — populated when the conversation
+ * Populated when the conversation
  * arrived via an MCP channel server (e.g. `slack`).
  * `None` for native-channel inbounds.
  */
@@ -1326,7 +1606,7 @@ dry_run: boolean, };
 // ─── SecurityEventKind.ts ────────────────────────────────────
 
 /**
- * Phase 82.10.o — security-domain audit events. Nested under
+ * Security-domain audit events. Nested under
  * [`AgentEventKind::SecurityEvent`] so subscribers persist
  * every variant alongside transcript / escalation events for
  * a unified audit log.

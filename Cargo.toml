@@ -1,7 +1,7 @@
 [package]
 name        = "nexo-plugin-admin"
 description = "Official admin plugin for the nexo-rs framework — out-of-tree subprocess plugin hosting a React UI to administer agents, skills, channels, LLM providers, memory, plugins, MCP servers, and observability surfaces."
-version     = "0.1.16"
+version     = "0.1.17"
 edition     = "2021"
 rust-version = "1.80"
 license     = "MIT OR Apache-2.0"
@@ -38,17 +38,18 @@ path = "src/main.rs"
 # nexo-broker + (gated) nexo-llm + nexo-memory + toml + dashmap.
 # `admin` exposes the AdminClient surface so the HTTP `/api/admin`
 # proxy can speak to the daemon's admin RPC table.
-nexo-microapp-sdk = { version = "0.1.14", features = ["admin", "plugin", "notifications", "events"] }
+# Phase 81.20.x F-portable — framework deps from crates.io only.
+nexo-microapp-sdk = { version = "0.1.18", features = ["admin", "plugin", "notifications", "events", "wizard"] }
 
 # Phase 82.10.m.c — reusable HTTP scaffolding (bearer middleware,
 # admin proxy, static-asset router, LiveTokenState, error mapping).
 # Lifted verbatim from agent-creator-microapp's M2 work.
-nexo-microapp-http = "0.1.0"
+nexo-microapp-http = "0.1.1"
 
 # Wire types for the admin RPC surface (LlmProviderSummary,
 # AdminAuditRow, etc.). The plugin's frontend consumes the same
 # shapes via ts-rs codegen.
-nexo-tool-meta = "0.1.13"
+nexo-tool-meta = "0.1.15"
 
 # Manifest parser for sanity checks at boot.
 nexo-plugin-manifest = "0.1.1"
@@ -77,8 +78,16 @@ base64       = "0.22"
 rand         = "0.8"
 arc-swap     = "1"
 
+async-stream = "0.3"
+futures      = "0.3"
+
+# Used by the onboarding wizard to probe LLM provider reachability
+# from the backend (never leaks the API key to the browser).
+reqwest      = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
 serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
+serde_yaml   = "0.9"
 tracing      = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow       = "1"
@@ -102,3 +111,4 @@ inherits      = "release"
 lto           = false
 codegen-units = 16
 strip         = "none"
+

@@ -18,6 +18,5 @@ export const manifest: ModuleManifest = {
     order: 50,
   },
   routes: [{ path: "", element: <MemoryMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

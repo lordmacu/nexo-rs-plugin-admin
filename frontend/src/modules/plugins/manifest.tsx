@@ -19,6 +19,5 @@ export const manifest: ModuleManifest = {
     order: 70,
   },
   routes: [{ path: "", element: <PluginsMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: false },
 };

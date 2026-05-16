@@ -59,6 +59,16 @@ export interface ModuleManifest {
    *  that don't need the lead drawer). */
   readonly shouldShowContextPanel?: (pathname: string) => boolean;
 
+  /** Optional predicate that decides whether the module's
+   *  rail entry surfaces at all. Re-evaluated on every Rail
+   *  render — implementations typically read a zustand store
+   *  (e.g. `useBootstrap`) so a state change re-renders the
+   *  rail. Returning `false` hides the entry from both the
+   *  desktop rail and the narrow-viewport bottom-nav. Module
+   *  routes remain registered so deep-links keep working, but
+   *  the operator can't navigate to them via the chrome. */
+  readonly visible?: () => boolean;
+
   /** Cmd+K entries this module contributes. Recomputed
    *  each time the palette opens; cap at ~50 entries to
    *  keep the modal usable. */
@@ -191,6 +201,7 @@ export const ModuleManifestSchema = z.object({
   sidebar: z.unknown().optional(),
   contextPanel: z.unknown().optional(),
   shouldShowContextPanel: z.function().optional(),
+  visible: z.function().optional(),
   cmdK: z.function().optional(),
   capabilities: ModuleCapabilitiesSchema.optional(),
   onMount: z.function().optional(),

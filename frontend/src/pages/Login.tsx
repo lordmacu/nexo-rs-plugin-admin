@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LogIn, KeyRound } from "lucide-react";
 
@@ -8,6 +8,17 @@ import { reset_session_expired_dedup } from "../api/client";
 import { Button, Textarea } from "../components/ui";
 import { useT } from "../i18n";
 
+async function fetchAutoToken(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/auth/token");
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ok: string; token?: string };
+    return data.ok === "true" && data.token ? data.token : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Login() {
   const t = useT();
   const login = useAuth((s) => s.login);
@@ -15,6 +26,26 @@ export default function Login() {
   const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // null = checking, false = strict mode (show form), true = auto-logging in
+  const [autoLogging, setAutoLogging] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAutoToken().then(async (autoToken) => {
+      if (cancelled) return;
+      if (!autoToken) {
+        setAutoLogging(false);
+        return;
+      }
+      setAutoLogging(true);
+      login(autoToken);
+      reset_session_expired_dedup();
+      if (!cancelled) nav("/m/chats", { replace: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [login, nav]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,23 +56,25 @@ export default function Login() {
       return;
     }
     setBusy(true);
-    // Stash the token so `adminCall` picks it up, then probe a
-    // cheap endpoint to validate. If the daemon rejects, we
-    // clear the token via the 401 handler in `client.ts`.
     login(trimmed);
-    // M2.b.notify-spa — reset the once-per-session dedup so a
-    // future rotation surfaces a fresh toast.
     reset_session_expired_dedup();
     try {
       await adminCall("nexo/admin/agents/list", {});
       nav("/chat", { replace: true });
     } catch (e: unknown) {
-      // adminCall throws on non-2xx; auth store already cleared
-      // on 401 via client.ts.
       const msg = e instanceof Error ? e.message : t("auth.login.error_default");
       setError(msg);
       setBusy(false);
     }
+  }
+
+  // Still checking or auto-login in progress — show nothing (avoids flash).
+  if (autoLogging !== false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-panel-alt">
+        <div className="text-text-meta text-sm">{t("app.bootstrap.loading")}</div>
+      </div>
+    );
   }
 
   return (

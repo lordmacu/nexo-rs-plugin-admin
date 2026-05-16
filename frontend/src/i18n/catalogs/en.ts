@@ -393,10 +393,11 @@ const en = {
   // ── Wizard — Welcome step ────────────────────────────────
   "wizard.welcome.title": "Configure agent",
   "wizard.welcome.intro":
-    "We connect an LLM provider, pair a WhatsApp number, and create the agent. It takes about 3 minutes. If you stop, your progress is saved.",
+    "We connect an LLM provider, set up a messaging channel, and create the agent. It takes about 3 minutes. Your progress is saved if you stop.",
   "wizard.welcome.step1":
     "Paste an API key (MiniMax by default). Validated without leaving this server.",
-  "wizard.welcome.step2": "Scan a QR code with your WhatsApp to pair.",
+  "wizard.welcome.step2":
+    "Choose a channel (WhatsApp, Telegram, or other) and link it to the agent.",
   "wizard.welcome.step3":
     "Define the agent's persona and you're done — it starts replying.",
   "wizard.welcome.start": "Start",
@@ -408,8 +409,8 @@ const en = {
   "wizard.shell.rail.welcome.blurb": "Configure agent",
   "wizard.shell.rail.llm.title": "LLM provider",
   "wizard.shell.rail.llm.blurb": "Connect an API key",
-  "wizard.shell.rail.pairing.title": "WhatsApp",
-  "wizard.shell.rail.pairing.blurb": "Pair a device",
+  "wizard.shell.rail.pairing.title": "Channel",
+  "wizard.shell.rail.pairing.blurb": "Connect a channel",
   "wizard.shell.rail.agent.title": "Agent",
   "wizard.shell.rail.agent.blurb": "Define the persona",
   "wizard.shell.footer_note":
@@ -432,24 +433,47 @@ const en = {
   "wizard.llm.continue": "Continue",
 
   // ── Wizard — Pairing step ────────────────────────────────
-  "wizard.pairing.title": "Pair WhatsApp",
+  "wizard.pairing.title": "Connect channel",
   "wizard.pairing.subtitle":
-    "Open WhatsApp on your phone → Settings → Linked devices → Link a device, and scan the code.",
+    "Choose the channel through which the agent will receive and send messages.",
+  "wizard.pairing.channel_label": "Messaging channel",
+  // WhatsApp-specific
+  "wizard.pairing.wa_instructions":
+    "Open WhatsApp → Settings → Linked devices → Link a device and scan the QR code.",
   "wizard.pairing.generate_qr": "Generate QR code",
-  "wizard.pairing.qr_alt": "WhatsApp QR",
+  "wizard.pairing.qr_alt": "Pairing QR code",
   "wizard.pairing.confirming": "Confirming on your phone…",
   "wizard.pairing.waiting": "Waiting for scan…",
   "wizard.pairing.regenerate_qr": "Regenerate QR",
   "wizard.pairing.expired": "The QR code expired before being scanned.",
   "wizard.pairing.regenerate_code": "Regenerate code",
   "wizard.pairing.linked_with_jid":
-    "✅ Device paired ({jid}). Advancing…",
-  "wizard.pairing.linked": "✅ Device paired. Advancing…",
+    "✅ WhatsApp linked ({jid}). Advancing…",
+  "wizard.pairing.linked": "✅ WhatsApp linked. Advancing…",
+  // Telegram-specific
+  "wizard.pairing.telegram_title": "Telegram",
+  "wizard.pairing.telegram_instructions":
+    "The Telegram plugin uses the token configured in telegram.yaml. If it is already active, you may continue.",
+  "wizard.pairing.telegram_active":
+    "✅ Telegram bot active ({instance}). The agent will reply on this channel.",
+  "wizard.pairing.telegram_not_configured":
+    "The Telegram plugin has no configured instance. Check config/plugins/telegram.yaml and restart the daemon.",
+  // Generic channel
+  "wizard.pairing.channel_active":
+    "✅ Channel {channel} is active. The agent will be assigned to this channel.",
+  "wizard.pairing.continue": "Continue",
+  // Phase 81.30 — plugin-driven pairing modal
+  "wizard.pairing.loading_channels": "Loading available channels…",
+  "wizard.pairing.no_channels":
+    "No channel plugin exposes a pairing flow. Enable a plugin (WhatsApp, Telegram, …) under config/plugins/.",
+  "wizard.pairing.open_modal": "Link channel",
+  "wizard.pairing.form_submit": "Save credential",
+  "wizard.pairing.custom_waiting": "Waiting for plugin confirmation…",
 
   // ── Wizard — Agent step ──────────────────────────────────
   "wizard.agent.title": "Create agent",
   "wizard.agent.subtitle":
-    "The agent will receive messages from the WhatsApp paired in the previous step and reply using the model you connected.",
+    "The agent will receive messages from the channel connected in the previous step and reply using the model you configured.",
   "wizard.agent.field_name": "Display name",
   "wizard.agent.name_placeholder": "Ana — support",
   "wizard.agent.id_label": "ID · {id}",
@@ -466,6 +490,24 @@ const en = {
     "The system prompt needs at least 10 characters.",
   "wizard.agent.error_prompt_max":
     "Prompt too long (max 10000 characters).",
+  "wizard.agent.persona_source_label": "Persona source",
+  "wizard.agent.persona_new": "New persona",
+  "wizard.agent.persona_existing": "Copy from existing agent",
+  "wizard.agent.existing_agent_label": "Source agent",
+  "wizard.agent.existing_loading": "Loading agents…",
+  "wizard.agent.existing_placeholder": "— select —",
+  // Phase 81.31 — multi-locale persona panel inside the wizard's
+  // "Copy from existing" mode.
+  "wizard.persona.locale_label": "Persona language",
+  "wizard.persona.field_system_prompt": "System prompt",
+  "wizard.persona.field_identity": "IDENTITY",
+  "wizard.persona.field_soul": "SOUL",
+  "wizard.persona.field_user": "USER",
+  "wizard.persona.field_agents": "AGENTS",
+  "wizard.persona.fallback_hint":
+    "No {locale} variant — showing the default file.",
+  "wizard.persona.voice_hint":
+    "Recommended voice for this language: {voice} (override per-chat via the voice tool).",
 
   // ── Wizard — Done step ───────────────────────────────────
   "wizard.done.title": "Done",

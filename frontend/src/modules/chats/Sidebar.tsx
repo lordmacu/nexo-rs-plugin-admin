@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useUrlState } from "../../shell/useUrlState";
 import { useConversations } from "../../store/conversations";
 import { useAuth } from "../../store/auth";
+import { useBootstrap, configuredAgentIds } from "../../store/bootstrap";
 import { useCmdk } from "../../store/cmdk";
 import { useLabels } from "../../store/labels";
 import { useSoundPref } from "../../store/soundPref";
@@ -65,14 +66,25 @@ export default function Sidebar() {
 
   const labels = useLabels((s) => s.labels);
   const assignments = useLabels((s) => s.assignments);
+  const bootstrap = useBootstrap((s) => s.bootstrap);
 
   const filtered = useMemo(() => {
     const sorted = [...conversations.values()].sort(
       (a, b) => b.last_message_at - a.last_message_at,
     );
-    let scoped = sorted;
+    // Drop conversations whose `agent_id` is no longer attached
+    // to a paired channel instance — the firehose replays
+    // historical events for deleted / unbound agents and we
+    // don't want those polluting the operator's queue. While
+    // bootstrap is still loading (`loaded === false`) we stay
+    // optimistic and show everything to avoid a first-paint
+    // flash of an empty sidebar.
+    const { ids: paired_agent_ids, loaded } = configuredAgentIds(bootstrap);
+    let scoped = loaded
+      ? sorted.filter((c) => paired_agent_ids.has(c.agent_id))
+      : sorted;
     if (filter_label_id !== null) {
-      scoped = sorted.filter((c) => {
+      scoped = scoped.filter((c) => {
         const ids = assignments.get(c.key);
         return ids ? ids.has(filter_label_id) : false;
       });
@@ -85,7 +97,7 @@ export default function Sidebar() {
         c.agent_id,
       ]),
     );
-  }, [conversations, query, filter_label_id, assignments]);
+  }, [conversations, query, filter_label_id, assignments, bootstrap]);
 
   // `/` quick-focus shortcut. Skip when an input/textarea/
   // contenteditable element is the active target so it doesn't
@@ -105,7 +117,13 @@ export default function Sidebar() {
   }, []);
 
   const showNoResults = query.trim().length > 0 && filtered.length === 0;
-  const showEmpty = conversations.size === 0;
+  // Show the "no chats" placeholder when the filtered queue
+  // (post agent-paired filter + label filter) is empty AND the
+  // operator hasn't typed a search query — otherwise orphan
+  // conversations in the raw store would leave the sidebar
+  // blank with no empty-state copy.
+  const showEmpty =
+    !showNoResults && filtered.length === 0 && filter_label_id === null;
 
   // Conversation count drives the live indicator in the
   // header — green dot when at least one conversation is

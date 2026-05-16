@@ -1,10 +1,22 @@
 // Step 3 — agent persona + binding. Submits to
 // `/api/onboarding/agent/save` which fans out to `agents/upsert`
 // with the right `inbound_bindings` shape on the server.
+//
+// Phase 81.31 — "existing" mode promotes a locale dropdown above
+// the prompt + exposes the 4 persona workspace files (IDENTITY,
+// SOUL, USER, AGENTS) for editing per locale. Switching locale
+// repopulates the snapshot from the source agent.
 
 import { useEffect, useState } from "react";
 import { Button, Input, Select, Spinner, Textarea } from "../ui";
 import { saveAgent } from "../../api/onboarding";
+import { listAgents, getAgent } from "../../api/agents";
+import type { AgentSummary, AgentDetail } from "../../api/agents";
+import { savePersonaLocalized } from "../../api/persona";
+import type {
+  PersonaLocales,
+  PersonaSnapshot,
+} from "../../api/types.gen";
 import { useWizard } from "../../store/wizard";
 import {
   defaultTemplateIdFor,
@@ -16,10 +28,6 @@ import { useT } from "../../i18n";
 
 const AGENT_ID_RE = /^[a-z][a-z0-9_-]{1,40}$/;
 
-// Map a free-form display name into a slug that satisfies
-// AGENT_ID_RE. Lowercase, ASCII-fold common diacritics, replace
-// runs of non-`[a-z0-9_]` with `-`, trim leading/trailing `-`,
-// cap at 41 chars, and ensure the leading char is a letter.
 function slugFromName(name: string): string {
   const folded = name.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
   let slug = folded.replace(/[^a-z0-9_]+/g, "-").replace(/^-+|-+$/g, "");
@@ -27,58 +35,152 @@ function slugFromName(name: string): string {
   return slug.slice(0, 41);
 }
 
+type PersonaMode = "template" | "existing";
+
+const EMPTY_SNAPSHOT: PersonaSnapshot = {
+  system_prompt: "",
+  identity: "",
+  soul: "",
+  user: "",
+  agents: "",
+  present_files: [],
+};
+
 interface StepAgentProps {
   onContinue: () => void;
   pairedInstance?: string;
+  /** Channel chosen in the pairing step. Defaults to "whatsapp". */
+  selectedChannel?: string;
 }
 
 export default function StepAgent({
   onContinue,
   pairedInstance,
+  selectedChannel = "whatsapp",
 }: StepAgentProps) {
   const t = useT();
   const agent = useWizard((s) => s.agent);
   const update = useWizard((s) => s.updateAgent);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // ── Persona mode ──────────────────────────────────────────
+  const [personaMode, setPersonaMode] = useState<PersonaMode>("template");
+  const [existingAgents, setExistingAgents] = useState<
+    readonly AgentSummary[] | null
+  >(null);
+  const [existingLoading, setExistingLoading] = useState(false);
+  const [selectedExistingId, setSelectedExistingId] = useState<string>("");
+
+  // Phase 81.31 — full source agent detail (with persona_locales)
+  // + currently-displayed locale + editable snapshot.
+  const [sourceDetail, setSourceDetail] = useState<AgentDetail | null>(null);
+  const [activeLocale, setActiveLocale] = useState<string>("en");
+  const [snapshot, setSnapshot] = useState<PersonaSnapshot>(EMPTY_SNAPSHOT);
+
+  useEffect(() => {
+    if (personaMode !== "existing" || existingAgents !== null) return;
+    setExistingLoading(true);
+    listAgents()
+      .then((agents) => setExistingAgents(agents))
+      .catch(() => setExistingAgents([]))
+      .finally(() => setExistingLoading(false));
+  }, [personaMode, existingAgents]);
+
+  async function onSelectExisting(id: string) {
+    setSelectedExistingId(id);
+    setSourceDetail(null);
+    setSnapshot(EMPTY_SNAPSHOT);
+    if (!id) return;
+    const detail = await getAgent(id);
+    if (!detail) return;
+    setSourceDetail(detail);
+    const locales = detail.persona_locales as PersonaLocales | null | undefined;
+    if (locales && locales.available.length > 0) {
+      const first = locales.available[0];
+      setActiveLocale(first);
+      const found = locales.snapshots.find((e) => e.locale === first);
+      const snap = found?.snapshot ?? legacySnapshot(detail);
+      setSnapshot(snap);
+      applySnapshotToWizard(snap, first);
+    } else {
+      // Legacy agent — single locale, snapshot derived from
+      // top-level system_prompt only.
+      setActiveLocale(detail.language ?? "en");
+      const snap = legacySnapshot(detail);
+      setSnapshot(snap);
+      applySnapshotToWizard(snap, detail.language ?? "en");
+    }
+  }
+
+  function applySnapshotToWizard(snap: PersonaSnapshot, locale: string) {
+    update({
+      system_prompt: snap.system_prompt,
+      language: locale === "es" ? "es" : "en",
+    });
+  }
+
+  function legacySnapshot(detail: AgentDetail): PersonaSnapshot {
+    return {
+      system_prompt: detail.system_prompt,
+      identity: "",
+      soul: "",
+      user: "",
+      agents: "",
+      present_files: ["system_prompt"],
+    };
+  }
+
+  function onLocaleChange(locale: string) {
+    if (!sourceDetail) return;
+    const locales = sourceDetail.persona_locales as
+      | PersonaLocales
+      | null
+      | undefined;
+    const found = locales?.snapshots.find((e) => e.locale === locale);
+    const snap = found?.snapshot ?? EMPTY_SNAPSHOT;
+    setActiveLocale(locale);
+    setSnapshot(snap);
+    applySnapshotToWizard(snap, locale);
+  }
+
+  function updateSnapshotField(
+    key: keyof Pick<
+      PersonaSnapshot,
+      "system_prompt" | "identity" | "soul" | "user" | "agents"
+    >,
+    value: string,
+  ) {
+    setSnapshot((s) => ({ ...s, [key]: value }));
+    if (key === "system_prompt") {
+      update({ system_prompt: value });
+    }
+  }
+
+  // ── Template mode ─────────────────────────────────────────
   function onNameChange(name: string) {
     update({ name, id: slugFromName(name) });
   }
 
-  // M9.c — auto-detect which template the current prompt
-  // corresponds to via exact string match. Falls back to the
-  // `custom` entry when the operator has typed something that
-  // doesn't match any template verbatim.
   const activeTemplate = findTemplateByPrompt(agent.system_prompt);
-  // M9.c.b — only show templates whose copy is in the operator-
-  // chosen language. `custom` (language: "any") is always there.
   const visibleTemplates = templatesForLanguage(agent.language);
 
-  // M9.c.b — if the active template no longer matches the
-  // current language (operator flipped the language dropdown
-  // after picking a template), auto-swap to the default for
-  // the new language. Skip when the current entry is `custom`
-  // (language-neutral) or when the operator has already typed
-  // their own prompt (custom path — leave their content alone).
   useEffect(() => {
+    if (personaMode !== "template") return;
     if (activeTemplate.language === "any") return;
     if (activeTemplate.language === agent.language) return;
     const fallback = getTemplateById(defaultTemplateIdFor(agent.language));
     if (fallback) update({ system_prompt: fallback.system_prompt });
-    // intentionally tracking only `agent.language` — re-running
-    // on prompt edits would clobber the operator's typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agent.language]);
+  }, [agent.language, personaMode]);
 
   function onSelectTemplate(id: string) {
     const tpl = getTemplateById(id);
     if (!tpl) return;
-    // The "Personalizado" entry has empty system_prompt; that's
-    // intentional — operator gets a clean slate to type their
-    // own. Validation (≥10 chars) blocks submit until they do.
     update({ system_prompt: tpl.system_prompt });
   }
 
+  // ── Validation + submit ───────────────────────────────────
   function validate(): string | null {
     if (!AGENT_ID_RE.test(agent.id)) return t("wizard.agent.error_id");
     if (agent.name.trim().length < 2) return t("wizard.agent.error_name");
@@ -104,12 +206,42 @@ export default function StepAgent({
         model_id: agent.model_id,
         system_prompt: agent.system_prompt,
         language: agent.language,
-        channel: "whatsapp",
+        channel: selectedChannel,
       };
       if (pairedInstance !== undefined) {
         payload.instance = pairedInstance;
       }
       await saveAgent(payload);
+      // Phase 81.31 — when copying from existing in a non-default
+      // locale, also persist the 4 workspace files + patch
+      // locale_prompts so the new agent inherits the localised
+      // content.
+      if (
+        personaMode === "existing" &&
+        sourceDetail &&
+        (snapshot.identity || snapshot.soul || snapshot.user || snapshot.agents)
+      ) {
+        try {
+          await savePersonaLocalized({
+            agent_id: agent.id,
+            locale: activeLocale,
+            system_prompt: snapshot.system_prompt || agent.system_prompt,
+            identity: snapshot.identity,
+            soul: snapshot.soul,
+            user: snapshot.user,
+            agents: snapshot.agents,
+            patch_yaml: true,
+          });
+        } catch (e) {
+          // Best-effort — the agent already exists, so we surface
+          // the failure inline without rolling it back. Operator
+          // can retry from the PersonaEditor after the wizard.
+          const msg = e instanceof Error ? e.message : String(e);
+          setError(msg);
+          setBusy(false);
+          return;
+        }
+      }
       onContinue();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -119,6 +251,10 @@ export default function StepAgent({
       setBusy(false);
     }
   }
+
+  const availableLocales =
+    sourceDetail?.persona_locales?.available ??
+    (sourceDetail ? [sourceDetail.language ?? "en"] : []);
 
   return (
     <div className="space-y-5">
@@ -145,45 +281,208 @@ export default function StepAgent({
         )}
       </Field>
 
-      <Field label={t("wizard.agent.field_template")}>
-        <Select
-          value={activeTemplate.id}
-          onChange={(e) => onSelectTemplate(e.target.value)}
-          className="w-full border rounded px-3 py-2 text-sm bg-white"
-        >
-          {visibleTemplates.map((tpl) => (
-            <option key={tpl.id} value={tpl.id}>
-              {tpl.name}
-            </option>
-          ))}
-        </Select>
-        <p className="text-xs text-text-meta mt-1">
-          {activeTemplate.description}
-        </p>
-      </Field>
-
-      <Field label={t("wizard.agent.field_prompt")}>
-        <Textarea
-          rows={6}
-          value={agent.system_prompt}
-          onChange={(e) => update({ system_prompt: e.target.value })}
-          className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
-        />
-        <span className="block text-xs text-text-meta mt-1">
-          {agent.system_prompt.length}/10000
+      {/* Persona source toggle */}
+      <div>
+        <span className="block text-xs font-medium text-text-secondary mb-2">
+          {t("wizard.agent.persona_source_label")}
         </span>
-      </Field>
+        <div className="flex gap-2">
+          <Button
+            variant={personaMode === "template" ? "primary" : "secondary"}
+            size="md"
+            onClick={() => setPersonaMode("template")}
+          >
+            {t("wizard.agent.persona_new")}
+          </Button>
+          <Button
+            variant={personaMode === "existing" ? "primary" : "secondary"}
+            size="md"
+            onClick={() => setPersonaMode("existing")}
+          >
+            {t("wizard.agent.persona_existing")}
+          </Button>
+        </div>
+      </div>
 
-      <Field label={t("wizard.agent.field_language")}>
-        <Select
-          value={agent.language}
-          onChange={(e) => update({ language: e.target.value as "es" | "en" })}
-          className="w-full border rounded px-3 py-2 text-sm bg-white"
-        >
-          <option value="es">{t("wizard.agent.lang_es")}</option>
-          <option value="en">{t("wizard.agent.lang_en")}</option>
-        </Select>
-      </Field>
+      {/* Template mode */}
+      {personaMode === "template" && (
+        <>
+          <Field label={t("wizard.agent.field_template")}>
+            <Select
+              value={activeTemplate.id}
+              onChange={(e) => onSelectTemplate(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
+            >
+              {visibleTemplates.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.name}
+                </option>
+              ))}
+            </Select>
+            <p className="text-xs text-text-meta mt-1">
+              {activeTemplate.description}
+            </p>
+          </Field>
+
+          <Field label={t("wizard.agent.field_prompt")}>
+            <Textarea
+              rows={6}
+              value={agent.system_prompt}
+              onChange={(e) => update({ system_prompt: e.target.value })}
+              className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+            />
+            <span className="block text-xs text-text-meta mt-1">
+              {agent.system_prompt.length}/10000
+            </span>
+          </Field>
+
+          <Field label={t("wizard.agent.field_language")}>
+            <Select
+              value={agent.language}
+              onChange={(e) =>
+                update({ language: e.target.value as "es" | "en" })
+              }
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
+            >
+              <option value="es">{t("wizard.agent.lang_es")}</option>
+              <option value="en">{t("wizard.agent.lang_en")}</option>
+            </Select>
+          </Field>
+        </>
+      )}
+
+      {/* Existing agent mode */}
+      {personaMode === "existing" && (
+        <>
+          <Field label={t("wizard.agent.existing_agent_label")}>
+            {existingLoading ? (
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
+                <Spinner size="md" />
+                {t("wizard.agent.existing_loading")}
+              </div>
+            ) : (
+              <Select
+                value={selectedExistingId}
+                onChange={(e) => void onSelectExisting(e.target.value)}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+              >
+                <option value="">{t("wizard.agent.existing_placeholder")}</option>
+                {(existingAgents ?? []).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.id}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+
+          {sourceDetail && (
+            <Field label={t("wizard.persona.locale_label")}>
+              <Select
+                value={activeLocale}
+                onChange={(e) => onLocaleChange(e.target.value)}
+                className="w-full border rounded px-3 py-2 text-sm bg-white"
+                disabled={availableLocales.length <= 1}
+              >
+                {availableLocales.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </Select>
+              {/* Phase 81.31 follow-up #2 — voice picker hint. */}
+              {(() => {
+                const entry = sourceDetail?.persona_locales?.snapshots.find(
+                  (e) => e.locale === activeLocale,
+                );
+                const voice = entry?.recommended_voice;
+                if (!voice) return null;
+                return (
+                  <span className="block text-xs text-text-meta mt-1">
+                    {t("wizard.persona.voice_hint", { voice })}
+                  </span>
+                );
+              })()}
+            </Field>
+          )}
+
+          {sourceDetail && (
+            <>
+              <Field label={t("wizard.persona.field_system_prompt")}>
+                <Textarea
+                  rows={6}
+                  value={snapshot.system_prompt}
+                  onChange={(e) =>
+                    updateSnapshotField("system_prompt", e.target.value)
+                  }
+                  className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+                />
+                <FallbackHint
+                  present={snapshot.present_files}
+                  field="system_prompt"
+                  locale={activeLocale}
+                />
+              </Field>
+
+              <Field label={t("wizard.persona.field_identity")}>
+                <Textarea
+                  rows={4}
+                  value={snapshot.identity}
+                  onChange={(e) => updateSnapshotField("identity", e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+                />
+                <FallbackHint
+                  present={snapshot.present_files}
+                  field="identity"
+                  locale={activeLocale}
+                />
+              </Field>
+
+              <Field label={t("wizard.persona.field_soul")}>
+                <Textarea
+                  rows={4}
+                  value={snapshot.soul}
+                  onChange={(e) => updateSnapshotField("soul", e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+                />
+                <FallbackHint
+                  present={snapshot.present_files}
+                  field="soul"
+                  locale={activeLocale}
+                />
+              </Field>
+
+              <Field label={t("wizard.persona.field_user")}>
+                <Textarea
+                  rows={4}
+                  value={snapshot.user}
+                  onChange={(e) => updateSnapshotField("user", e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+                />
+                <FallbackHint
+                  present={snapshot.present_files}
+                  field="user"
+                  locale={activeLocale}
+                />
+              </Field>
+
+              <Field label={t("wizard.persona.field_agents")}>
+                <Textarea
+                  rows={4}
+                  value={snapshot.agents}
+                  onChange={(e) => updateSnapshotField("agents", e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm leading-relaxed"
+                />
+                <FallbackHint
+                  present={snapshot.present_files}
+                  field="agents"
+                  locale={activeLocale}
+                />
+              </Field>
+            </>
+          )}
+        </>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
@@ -196,6 +495,24 @@ export default function StepAgent({
         {t("wizard.agent.submit")}
       </Button>
     </div>
+  );
+}
+
+function FallbackHint({
+  present,
+  field,
+  locale,
+}: {
+  present: string[] | undefined;
+  field: string;
+  locale: string;
+}) {
+  const t = useT();
+  if ((present ?? []).includes(field)) return null;
+  return (
+    <span className="block text-xs text-text-meta mt-1">
+      {t("wizard.persona.fallback_hint", { locale })}
+    </span>
   );
 }
 

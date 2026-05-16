@@ -32,6 +32,9 @@ export interface AgentDetail {
   readonly language?: string;
   readonly workspace?: string;
   readonly extra_docs?: readonly string[];
+  /** Phase 81.31 — localised persona catalog. `null` for legacy
+   *  agents without the daemon-side reader wired. */
+  readonly persona_locales?: import("./types.gen").PersonaLocales | null;
 }
 
 /** `nexo/admin/agents/list` — returns the operator-visible

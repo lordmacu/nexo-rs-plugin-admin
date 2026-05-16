@@ -22,6 +22,8 @@
 //! lands in 90.2 alongside the React bundle.
 
 pub mod assets;
+pub mod auth_token;
+pub mod bootstrap;
 pub mod healthz;
 pub mod login;
 
@@ -38,6 +40,7 @@ use tokio_util::sync::CancellationToken;
 use tower_http::limit::RequestBodyLimitLayer;
 
 use crate::auth::LiveAdminSession;
+use crate::firehose::FirehoseState;
 
 // Re-export the live-token primitives so future modules
 // (rotate UI, login form) keep importing `crate::http::LiveTokenState`.
@@ -116,11 +119,19 @@ impl HttpServerConfig {
 
 /// Build the axum router. Public for integration tests; the
 /// production path goes through [`run`].
+///
+/// `onboarding_state` is always `Some` when the HTTP server is
+/// active (same gate as `FirehoseState`). When `Some`, the router
+/// mounts the onboarding wizard routes under `/api/onboarding/*`
+/// and replaces the hardcoded `/api/bootstrap` stub with the real
+/// daemon snapshot.
 pub fn build_router(
     cfg: &HttpServerConfig,
     admin: Arc<AdminClient>,
     live_token_state: Arc<LiveTokenState>,
     admin_session: Arc<LiveAdminSession>,
+    firehose_state: Option<Arc<FirehoseState>>,
+    onboarding_state: Option<Arc<crate::onboarding::OnboardingState>>,
 ) -> Router {
     // M2.b — caller-supplied so the listener registered in
     // `main.rs` writes to the SAME `Arc<LiveTokenState>` that the
@@ -128,25 +139,60 @@ pub fn build_router(
     // shared Arc, rotations would land on a separate copy and
     // never propagate to in-flight HTTP traffic.
     let bearer_state = Arc::clone(&live_token_state);
+    let auth_token_state =
+        auth_token::AuthTokenState::from_env(Arc::clone(&live_token_state));
     let admin_state = Arc::new(AdminProxyState { admin });
     let protected = Router::new()
         .route("/api/admin", post(admin_handler))
         .with_state(admin_state)
-        .layer(from_fn_with_state(bearer_state, require_bearer))
+        .layer(from_fn_with_state(bearer_state.clone(), require_bearer))
         .layer(RequestBodyLimitLayer::new(BODY_LIMIT_BYTES));
-    Router::new()
+
+    // Firehose routes — bearer middleware accepts both
+    // `Authorization: Bearer` (backfill fetch) and `?token=`
+    // (SSE stream, where EventSource can't set headers).
+    let firehose = firehose_state.map(|state| {
+        crate::firehose::bind_routes(state)
+            .layer(from_fn_with_state(bearer_state, require_bearer))
+    });
+
+    let mut router = Router::new()
         .route(&cfg.health_path, get(healthz::handler))
+        // Unauthenticated — SPA calls this on Login mount to
+        // auto-login when NEXO_ADMIN_AUTH_STRICT is not set.
+        .route(
+            "/api/auth/token",
+            get(auth_token::handler).with_state(auth_token_state),
+        )
         // Phase 90.4 — login routes (unauthenticated): /login
         // form + POST /api/login + POST /api/logout. Mount BEFORE
         // the bearer-protected merge so the login routes don't
         // require a bearer to reach.
         .merge(login::router(admin_session))
-        .merge(protected)
-        // Phase 90.2.12 — mount the embedded React SPA as the
-        // fallback service so any path NOT claimed by /api/* or
-        // /healthz falls through to the SPA shell. React Router
-        // owns the rest of the URL space.
-        .fallback_service(assets::router())
+        .merge(protected);
+
+    if let Some(fh) = firehose {
+        router = router.merge(fh);
+    }
+
+    // Onboarding wizard routes (authenticated via bearer, same as
+    // `/api/admin`). When present, the bootstrap handler in this
+    // sub-router overrides the hardcoded stub. The old route at
+    // line 162 is NOT registered — the onboarding module claims
+    // `/api/bootstrap` + `/api/onboarding/*`.
+    if let Some(state) = onboarding_state {
+        router = router.merge(crate::onboarding::bind_routes(state));
+    } else {
+        // Fallback: no daemon snapshot available → stub that
+        // skips the wizard (legacy behavior).
+        router = router.route("/api/bootstrap", get(bootstrap::handler));
+    }
+
+    // Phase 90.2.12 — mount the embedded React SPA as the
+    // fallback service so any path NOT claimed by /api/* or
+    // /healthz falls through to the SPA shell. React Router
+    // owns the rest of the URL space.
+    router.fallback_service(assets::router())
 }
 
 /// Bind, listen, drain on shutdown. Used as a `tokio::spawn`'d
@@ -158,9 +204,18 @@ pub async fn run(
     admin: Arc<AdminClient>,
     live_token_state: Arc<LiveTokenState>,
     admin_session: Arc<LiveAdminSession>,
+    firehose_state: Option<Arc<FirehoseState>>,
+    onboarding_state: Option<Arc<crate::onboarding::OnboardingState>>,
     shutdown: CancellationToken,
 ) -> anyhow::Result<()> {
-    let router = build_router(&cfg, admin, live_token_state, admin_session);
+    let router = build_router(
+        &cfg,
+        admin,
+        live_token_state,
+        admin_session,
+        firehose_state,
+        onboarding_state,
+    );
     let listener = tokio::net::TcpListener::bind(cfg.bind)
         .await
         .map_err(|e| anyhow::anyhow!("bind failed for {}: {e}", cfg.bind))?;

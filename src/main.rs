@@ -18,7 +18,9 @@
 //! channel plugins handling broker events without admin RPC).
 
 mod auth;
+mod firehose;
 mod http;
+mod onboarding;
 mod tunnel;
 
 use std::sync::Arc;
@@ -95,6 +97,22 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
         None
     };
 
+    // Firehose — build before registering listeners so the
+    // `Arc<FirehoseState>` can be cloned into both the notification
+    // listener and the HTTP router.
+    let firehose = if http_cfg.is_some() {
+        match firehose::build().await {
+            Ok(h) => Some(h),
+            Err(e) => {
+                tracing::warn!(error = %e, "firehose build failed; /api/firehose disabled");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    let firehose_state = firehose.as_ref().map(|h| std::sync::Arc::clone(&h.state));
+
     let (admin_tx, admin_rx) =
         tokio::sync::oneshot::channel::<Arc<nexo_microapp_sdk::admin::AdminClient>>();
 
@@ -113,6 +131,16 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 token.cancel();
             }
         });
+
+    // Register the agent-event notification listener so the firehose
+    // store + broadcast receive events emitted by the daemon.
+    if let Some(ref fh) = firehose {
+        let listener = fh.listener.clone();
+        app = app.with_notification_listener(
+            nexo_tool_meta::admin::agent_events::AGENT_EVENT_NOTIFY_METHOD,
+            move |params| listener(params),
+        );
+    }
 
     // Phase 90.x.token-rotated — wire the daemon's
     // `nexo/notify/token_rotated` listener so a remote
@@ -182,6 +210,16 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 "spawning admin HTTP task"
             );
 
+            // Build the onboarding wizard state so the SPA can
+            // create its first agent, plug in LLM keys, and pair
+            // channels through the same bearer-auth'd surface.
+            let http_client = reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(10))
+                .build()
+                .unwrap_or_else(|_| reqwest::Client::new());
+            let onboarding_state =
+                onboarding::OnboardingState::new(Arc::clone(&admin), http_client);
+
             // Phase 90.4.24 — opt-in tunnel. None by default
             // (admin = security-sensitive). Operator opts into
             // cloudflared/tailscale via NEXO_ADMIN_TUNNEL.
@@ -215,7 +253,17 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
                 }
             };
 
-            if let Err(e) = http::run(cfg, admin, state, session, shutdown).await {
+            if let Err(e) = http::run(
+                cfg,
+                admin,
+                state,
+                session,
+                firehose_state,
+                Some(onboarding_state),
+                shutdown,
+            )
+            .await
+            {
                 tracing::error!(error = %e, "admin HTTP task exited with error");
             }
             // _tunnel_handle dropped here — child process killed.

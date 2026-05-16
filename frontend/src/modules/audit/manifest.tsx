@@ -27,6 +27,5 @@ export const manifest: ModuleManifest = {
   // No secondary sidebar — the audit table panel takes the full
   // workspace main area (filters live above the list, no per-
   // row drilldown side surface in v0).
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

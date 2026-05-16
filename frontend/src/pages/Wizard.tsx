@@ -88,15 +88,29 @@ export default function Wizard({ initial, onComplete }: WizardProps) {
         return <StepWelcome onStart={() => advanceTo(1)} />;
       case 1:
         return <StepLlm onContinue={() => advanceTo(2)} />;
-      case 2:
-        return <StepPairing onContinue={() => advanceTo(3)} />;
+      case 2: {
+        const availableChannels = initial.paired_devices.map((d) => d.channel);
+        return (
+          <StepPairing
+            onContinue={() => advanceTo(3)}
+            availableChannels={availableChannels}
+          />
+        );
+      }
       case 3: {
-        const wa = initial.paired_devices.find((d) => d.channel === "whatsapp");
-        const instance = pairing.device_jid ?? wa?.instance;
+        const selectedChannel = pairing.selected_channel || "whatsapp";
+        const matchedDevice = initial.paired_devices.find(
+          (d) => d.channel === selectedChannel,
+        );
+        const instance = pairing.device_jid ?? matchedDevice?.instance;
         const agentProps =
           instance !== undefined
-            ? { onContinue: () => advanceTo(4), pairedInstance: instance }
-            : { onContinue: () => advanceTo(4) };
+            ? {
+                onContinue: () => advanceTo(4),
+                pairedInstance: instance,
+                selectedChannel,
+              }
+            : { onContinue: () => advanceTo(4), selectedChannel };
         return <StepAgent {...agentProps} />;
       }
       case 4:

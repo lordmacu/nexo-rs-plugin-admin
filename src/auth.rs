@@ -78,6 +78,12 @@ impl AdminSession {
 
     /// `true` iff the cookie was signed by this session's secret
     /// AND hasn't expired.
+    ///
+    /// Currently consumed by tests + the unauthenticated `/login`
+    /// surface; live HTTP routes go through `require_bearer`
+    /// instead. Kept on the API for future SSR scenarios that
+    /// would render a logged-in shell from a session cookie.
+    #[allow(dead_code)]
     pub fn validate_cookie(&self, value: &str) -> bool {
         let Some((payload, sig)) = value.split_once('.') else {
             return false;

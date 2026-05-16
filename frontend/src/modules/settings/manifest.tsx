@@ -18,6 +18,5 @@ export const manifest: ModuleManifest = {
     order: 90,
   },
   routes: [{ path: "", element: <SettingsMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: false },
 };

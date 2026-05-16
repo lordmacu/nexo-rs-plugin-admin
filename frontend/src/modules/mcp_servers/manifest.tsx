@@ -17,6 +17,5 @@ export const manifest: ModuleManifest = {
     order: 80,
   },
   routes: [{ path: "", element: <McpServersMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: false },
 };

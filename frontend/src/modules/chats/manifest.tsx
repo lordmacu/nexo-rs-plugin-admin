@@ -9,6 +9,7 @@ import { MessageSquare } from "lucide-react";
 import type { CmdkActionLike, ModuleManifest } from "../../shell/types";
 import { adminCall } from "../../api/admin";
 import { backfill, subscribeStream } from "../../api/firehose";
+import { hasAgentWithInstance, useBootstrap } from "../../store/bootstrap";
 import { useConversations } from "../../store/conversations";
 import { useFirehose } from "../../store/firehose";
 import { t as tStatic } from "../../i18n";
@@ -36,6 +37,13 @@ export const manifest: ModuleManifest = {
     { path: ":key", element: <ChatsMain /> },
   ],
   sidebar: ChatsSidebar,
+  // Hide the rail entry until at least one agent owns a paired
+  // channel instance. Pre-pairing the operator's queue is
+  // empty by design — surfacing the icon would just lead to a
+  // dead screen. Reads the shared `useBootstrap` snapshot so a
+  // wizard completion or fresh pairing re-renders the rail and
+  // brings the entry in without a reload.
+  visible: () => hasAgentWithInstance(useBootstrap.getState().bootstrap),
   capabilities: {
     tenantSwitch: true,
     firehose: true,

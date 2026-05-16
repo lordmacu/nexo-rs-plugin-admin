@@ -17,7 +17,23 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import type { ModuleEntry } from "./ModuleRegistry";
 import { useViewport } from "./useViewport";
+import { useBootstrap } from "../store/bootstrap";
 import { Button } from "../components/ui";
+
+function isVisibleEntry(entry: ModuleEntry): boolean {
+  if (entry.disabled) return false;
+  const predicate = entry.manifest.visible;
+  if (typeof predicate !== "function") return true;
+  try {
+    return predicate();
+  } catch {
+    // Defensive — a buggy predicate keeps the entry visible
+    // rather than silently dropping a whole module from the
+    // rail. The operator can still surface the bug via the
+    // dev console.
+    return true;
+  }
+}
 
 interface RailProps {
   readonly entries: readonly ModuleEntry[];
@@ -28,6 +44,11 @@ export function Rail({ entries, tenantSwitcherSlot }: RailProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isNarrow } = useViewport();
+  // Subscribe to the bootstrap snapshot so a state change
+  // (wizard completion, fresh pairing) re-renders the rail and
+  // surfaces / hides entries whose `visible` predicate reads
+  // the same store.
+  useBootstrap((s) => s.bootstrap);
 
   // Active id is the second segment of /m/<id>/...
   const activeId = useMemo(() => {
@@ -39,7 +60,7 @@ export function Rail({ entries, tenantSwitcherSlot }: RailProps) {
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-      const enabled = entries.filter((e) => !e.disabled);
+      const enabled = entries.filter(isVisibleEntry);
       const isHorizontal = isNarrow;
       const next_keys = isHorizontal
         ? ["ArrowRight", "ArrowLeft"]
@@ -59,8 +80,15 @@ export function Rail({ entries, tenantSwitcherSlot }: RailProps) {
     [entries, navigate, isNarrow],
   );
 
-  const enabledEntries = entries.filter((e) => !e.disabled);
-  const disabledEntries = entries.filter((e) => e.disabled);
+  const enabledEntries = entries.filter(isVisibleEntry);
+  // `disabledEntries` keeps showing manifest_invalid /
+  // migration_failed modules greyed-out so the operator can
+  // discover the failure. A `visible: () => false` entry is a
+  // deliberate hide (not a bug) so it stays out of both
+  // groups.
+  const disabledEntries = entries.filter(
+    (e) => e.disabled && (e.manifest.visible?.() ?? true),
+  );
 
   // ── Narrow viewport: bottom-nav ──────────────────────────────
   if (isNarrow) {

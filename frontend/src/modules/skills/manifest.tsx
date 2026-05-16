@@ -18,6 +18,5 @@ export const manifest: ModuleManifest = {
     order: 30,
   },
   routes: [{ path: "", element: <SkillsMain /> }],
-  sidebar: () => null,
   capabilities: { tenantSwitch: true },
 };

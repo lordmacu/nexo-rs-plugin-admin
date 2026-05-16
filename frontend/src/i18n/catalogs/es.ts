@@ -393,11 +393,11 @@ const es = {
   // ── Wizard — Welcome step ────────────────────────────────
   "wizard.welcome.title": "Configurar agente",
   "wizard.welcome.intro":
-    "Conectamos un proveedor de LLM, emparejamos un número de WhatsApp y creamos el agente. Toma unos 3 minutos. Si te interrumpes, tu progreso queda guardado.",
+    "Conectamos un proveedor de LLM, configuramos el canal de mensajería y creamos el agente. Toma unos 3 minutos. Si te interrumpes, tu progreso queda guardado.",
   "wizard.welcome.step1":
     "Pegás una clave de API (MiniMax por defecto). Se valida sin abandonar este servidor.",
   "wizard.welcome.step2":
-    "Escaneás un código QR con tu WhatsApp para emparejar.",
+    "Elegís el canal (WhatsApp, Telegram u otro) y lo vinculas al agente.",
   "wizard.welcome.step3":
     "Definís la persona del agente y listo: empieza a responder.",
   "wizard.welcome.start": "Empezar",
@@ -409,8 +409,8 @@ const es = {
   "wizard.shell.rail.welcome.blurb": "Configurar agente",
   "wizard.shell.rail.llm.title": "Proveedor LLM",
   "wizard.shell.rail.llm.blurb": "Conecta una clave de API",
-  "wizard.shell.rail.pairing.title": "WhatsApp",
-  "wizard.shell.rail.pairing.blurb": "Empareja un dispositivo",
+  "wizard.shell.rail.pairing.title": "Canal",
+  "wizard.shell.rail.pairing.blurb": "Conecta un canal",
   "wizard.shell.rail.agent.title": "Agente",
   "wizard.shell.rail.agent.blurb": "Define la persona",
   "wizard.shell.footer_note":
@@ -433,24 +433,48 @@ const es = {
   "wizard.llm.continue": "Continuar",
 
   // ── Wizard — Pairing step ────────────────────────────────
-  "wizard.pairing.title": "Empareja WhatsApp",
+  "wizard.pairing.title": "Conectar canal",
   "wizard.pairing.subtitle":
-    "Abre WhatsApp en tu teléfono → Configuración → Dispositivos vinculados → Vincular dispositivo, y escanea el código.",
+    "Elegí el canal por el que el agente recibirá y enviará mensajes.",
+  "wizard.pairing.channel_label": "Canal de mensajería",
+  // WhatsApp-specific
+  "wizard.pairing.wa_instructions":
+    "Abrí WhatsApp → Configuración → Dispositivos vinculados → Vincular dispositivo y escaneá el código.",
   "wizard.pairing.generate_qr": "Generar código QR",
-  "wizard.pairing.qr_alt": "WhatsApp QR",
+  "wizard.pairing.qr_alt": "QR de vinculación",
   "wizard.pairing.confirming": "Confirmando en tu teléfono…",
   "wizard.pairing.waiting": "Esperando escaneo…",
   "wizard.pairing.regenerate_qr": "Regenerar QR",
   "wizard.pairing.expired": "El código QR expiró antes de escanearse.",
   "wizard.pairing.regenerate_code": "Regenerar código",
   "wizard.pairing.linked_with_jid":
-    "✅ Dispositivo emparejado ({jid}). Avanzando…",
-  "wizard.pairing.linked": "✅ Dispositivo emparejado. Avanzando…",
+    "✅ WhatsApp vinculado ({jid}). Avanzando…",
+  "wizard.pairing.linked": "✅ WhatsApp vinculado. Avanzando…",
+  // Telegram-specific
+  "wizard.pairing.telegram_title": "Telegram",
+  "wizard.pairing.telegram_instructions":
+    "El plugin de Telegram usa el token configurado en telegram.yaml. Si ya está activo, podés continuar.",
+  "wizard.pairing.telegram_active":
+    "✅ Bot de Telegram activo ({instance}). El agente responderá en este canal.",
+  "wizard.pairing.telegram_not_configured":
+    "El plugin de Telegram no tiene una instancia configurada. Revisá config/plugins/telegram.yaml y reiniciá el daemon.",
+  // Generic channel
+  "wizard.pairing.channel_active":
+    "✅ Canal {channel} activo. El agente se asignará a este canal.",
+  "wizard.pairing.continue": "Continuar",
+  // Phase 81.30 — plugin-driven pairing modal
+  "wizard.pairing.loading_channels": "Cargando canales disponibles…",
+  "wizard.pairing.no_channels":
+    "Ningún plugin de canal expone un flujo de vinculación. Activá un plugin (WhatsApp, Telegram, …) en config/plugins/.",
+  "wizard.pairing.open_modal": "Vincular canal",
+  "wizard.pairing.form_submit": "Guardar credencial",
+  "wizard.pairing.custom_waiting":
+    "Esperando confirmación del plugin…",
 
   // ── Wizard — Agent step ──────────────────────────────────
   "wizard.agent.title": "Crear agente",
   "wizard.agent.subtitle":
-    "El agente recibirá los mensajes del WhatsApp emparejado en el paso anterior y responderá usando el modelo que conectaste.",
+    "El agente recibirá los mensajes del canal conectado en el paso anterior y responderá usando el modelo que configuraste.",
   "wizard.agent.field_name": "Nombre visible",
   "wizard.agent.name_placeholder": "Ana — soporte",
   "wizard.agent.id_label": "ID · {id}",
@@ -467,6 +491,24 @@ const es = {
     "El prompt del sistema necesita al menos 10 caracteres.",
   "wizard.agent.error_prompt_max":
     "Prompt demasiado largo (máx. 10000 caracteres).",
+  "wizard.agent.persona_source_label": "Origen de la persona",
+  "wizard.agent.persona_new": "Nueva persona",
+  "wizard.agent.persona_existing": "Copiar de agente existente",
+  "wizard.agent.existing_agent_label": "Agente origen",
+  "wizard.agent.existing_loading": "Cargando agentes…",
+  "wizard.agent.existing_placeholder": "— seleccionar —",
+  // Phase 81.31 — multi-locale persona panel inside the wizard's
+  // "Copy from existing" mode.
+  "wizard.persona.locale_label": "Idioma del persona",
+  "wizard.persona.field_system_prompt": "System prompt",
+  "wizard.persona.field_identity": "IDENTITY",
+  "wizard.persona.field_soul": "SOUL",
+  "wizard.persona.field_user": "USER",
+  "wizard.persona.field_agents": "AGENTS",
+  "wizard.persona.fallback_hint":
+    "Sin variante en {locale} — mostrando el archivo por defecto.",
+  "wizard.persona.voice_hint":
+    "Voz recomendada para este idioma: {voice} (se puede sobrescribir desde el chat con la herramienta de voz).",
 
   // ── Wizard — Done step ───────────────────────────────────
   "wizard.done.title": "Listo",

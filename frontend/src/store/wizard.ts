@@ -30,6 +30,9 @@ export interface WizardLlm {
 export interface WizardPairing {
   challenge_id?: string;
   device_jid?: string;
+  /** Channel the operator chose in the pairing step. Defaults to
+   *  "whatsapp" for backwards-compat with existing drafts. */
+  selected_channel: string;
   state: "idle" | "qr_ready" | "awaiting_user" | "linked" | "expired" | "error";
   /** Base64 PNG payload from `pairing/start`. Persisted so the
    *  same QR re-renders after a tab reload (until expiry). */
@@ -66,6 +69,7 @@ const DEFAULT_DRAFT: WizardDraft = {
   },
   pairing: {
     state: "idle",
+    selected_channel: "whatsapp",
   },
   agent: {
     id: "",
@@ -132,16 +136,22 @@ export const useWizard = create<WizardStoreState>()(
           // no escape, even after deleting from WhatsApp + web).
           let pairing = s.pairing;
           if (!b.has_pairing && pairing.state !== "idle") {
-            pairing = { state: "idle" };
+            pairing = { ...pairing, state: "idle" };
           }
-          // Pre-fill the agent step's instance from the first
-          // paired device when present.
-          const firstWa = b.paired_devices.find(
-            (d) => d.channel === "whatsapp",
+          // Pre-fill selected_channel from the first paired device
+          // when the draft hasn't chosen one yet or the chosen
+          // channel was revoked.
+          const firstDevice = b.paired_devices[0];
+          const channelStillPaired = b.paired_devices.some(
+            (d) => d.channel === pairing.selected_channel,
           );
-          const agent = firstWa?.instance
-            ? { ...s.agent /* instance saved separately on submit */ }
-            : s.agent;
+          if (firstDevice && !channelStillPaired) {
+            pairing = {
+              ...pairing,
+              selected_channel: firstDevice.channel,
+            };
+          }
+          const agent = s.agent;
           return { step, agent, llm: { ...s.llm, saved: b.has_llm }, pairing };
         }),
     }),

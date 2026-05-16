@@ -1,29 +1,25 @@
-// Step 2 — WhatsApp QR pairing.
+// Step 2 — channel selector backed by plugin-driven pairing
+// descriptors (`nexo/admin/pairing/channels`).
 //
-// M9.b — SSE primary push via `subscribePairingStream`, with a
-// 5 s polling fallback for resilience (proxy idle timeouts,
-// dropped connections, late subscriptions). Both paths call
-// `applyPairingStatus` so the projection logic is shared.
+// The operator picks a channel from the catalog the daemon
+// reports. Selecting one opens `PairingModal`, which routes to
+// the right flow based on `channel.kind` (qr / form / info /
+// custom). On success the modal closes and the wizard advances.
 
 import { useEffect, useState } from "react";
-import { RefreshCcw, Smartphone } from "lucide-react";
-import { adminCall } from "../../api/admin";
-import { subscribePairingStream } from "../../api/pairing";
-import type { PairingStatus, PairingStateWire } from "../../api/types";
+import { listPairingChannels } from "../../api/pairing";
+import type { PairingChannelInfo } from "../../api/types.gen";
 import { useWizard } from "../../store/wizard";
-import { Button, Spinner } from "../ui";
+import { useLocaleStore } from "../../i18n/store";
+import { Button, Select, Spinner } from "../ui";
 import { useT } from "../../i18n";
-
-interface PairingStartResponse {
-  challenge_id: string;
-  expires_at_ms: number;
-  qr_png_base64?: string;
-  qr_ascii?: string;
-  instructions?: string;
-}
+import PairingModal from "./PairingModal";
 
 interface StepPairingProps {
   onContinue: () => void;
+  /** Legacy prop kept for backwards-compat with the old wizard
+   *  wiring; no longer used by this descriptor-driven version. */
+  availableChannels?: string[];
 }
 
 export default function StepPairing({ onContinue }: StepPairingProps) {
@@ -31,101 +27,57 @@ export default function StepPairing({ onContinue }: StepPairingProps) {
   const pairing = useWizard((s) => s.pairing);
   const updatePairing = useWizard((s) => s.updatePairing);
   const agent = useWizard((s) => s.agent);
-  const [busy, setBusy] = useState(false);
+  const locale = useLocaleStore((s) => s.locale);
+
+  const [channels, setChannels] = useState<PairingChannelInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  async function start() {
-    setBusy(true);
-    setError(null);
-    try {
-      // Phase 82.10 requires `agent_id` for the audit trail. The
-      // wizard runs pairing before the agent step, so the draft
-      // `agent.id` is usually empty here — fall back to
-      // `"bootstrap"`. The actual agent↔credential binding is
-      // applied later by `credentials/register` (StepAgent submit).
-      const resp = await adminCall<PairingStartResponse>(
-        "nexo/admin/pairing/start",
-        {
-          agent_id: agent.id || "bootstrap",
-          channel: "whatsapp",
-        },
-      );
-      const startPatch: Partial<typeof pairing> = {
-        challenge_id: resp.challenge_id,
-        expires_at_ms: resp.expires_at_ms,
-        state: "qr_ready",
-      };
-      if (resp.qr_png_base64 !== undefined)
-        startPatch.last_qr_png = resp.qr_png_base64;
-      updatePairing(startPatch);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      updatePairing({ state: "error" });
-    } finally {
-      setBusy(false);
-    }
-  }
+  const selectedChannel = pairing.selected_channel || "whatsapp";
 
-  // Push (SSE) primary + 5 s polling fallback.
   useEffect(() => {
-    if (!pairing.challenge_id) return;
-    if (["linked", "expired", "error"].includes(pairing.state)) return;
     let cancelled = false;
-
-    function applyPairingStatus(status: PairingStatus) {
-      if (cancelled) return;
-      const next = mapWireState(status.state);
-      const patch: Partial<typeof pairing> = { state: next };
-      if (status.data?.qr_png_base64)
-        patch.last_qr_png = status.data.qr_png_base64;
-      if (status.data?.device_jid) patch.device_jid = status.data.device_jid;
-      updatePairing(patch);
-      if (next === "linked") {
-        // Auto-advance after a brief beat so the operator sees
-        // the green checkmark.
-        window.setTimeout(() => onContinue(), 800);
-      }
-    }
-
-    // Primary: SSE push.
-    const closeSse = subscribePairingStream({
-      challenge_id: pairing.challenge_id,
-      onUpdate: applyPairingStatus,
-      onError: () => {
-        // SSE drop is fine — polling fallback below catches up.
-      },
-    });
-
-    // Belt + suspenders: polling fallback every 5 s. The eager
-    // first tick happens immediately so the wizard isn't blank
-    // for the full interval if SSE failed to open.
-    async function poll() {
-      if (cancelled || !pairing.challenge_id) return;
-      try {
-        const resp = await adminCall<PairingStatus>(
-          "nexo/admin/pairing/status",
-          {
-            challenge_id: pairing.challenge_id,
-          },
-        );
-        applyPairingStatus(resp);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      }
-    }
-    void poll();
-    const tickHandle = window.setInterval(() => void poll(), 5000);
-
+    listPairingChannels(locale)
+      .then((resp) => {
+        if (cancelled) return;
+        setChannels(resp.channels);
+        // Auto-pick the first channel that has a kind set so the
+        // initial render doesn't show a blank selector.
+        if (
+          resp.channels.length > 0 &&
+          !resp.channels.find((c) => c.channel === selectedChannel)
+        ) {
+          updatePairing({ selected_channel: resp.channels[0].channel });
+        }
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : String(e));
+        setChannels([]);
+      });
     return () => {
       cancelled = true;
-      closeSse();
-      window.clearInterval(tickHandle);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pairing.challenge_id]);
+  }, [locale]);
 
-  const expired =
-    pairing.expires_at_ms !== undefined && pairing.expires_at_ms < Date.now();
+  const picked = channels?.find((c) => c.channel === selectedChannel) ?? null;
+
+  function onChannelChange(ch: string) {
+    updatePairing({ selected_channel: ch });
+  }
+
+  function onPaired(channel: string, instance: string) {
+    const patch: Partial<{
+      selected_channel: string;
+      device_jid: string;
+      state: "linked";
+    }> = { selected_channel: channel, state: "linked" };
+    if (instance) patch.device_jid = instance;
+    updatePairing(patch);
+    setModalOpen(false);
+    onContinue();
+  }
 
   return (
     <div className="space-y-5">
@@ -138,57 +90,51 @@ export default function StepPairing({ onContinue }: StepPairingProps) {
         </p>
       </div>
 
-      {!pairing.last_qr_png && pairing.state === "idle" && (
-        <Button variant="primary" size="md" onClick={start} disabled={busy}>
-          {busy ? <Spinner size="md" /> : <Smartphone size={16} />}
-          {t("wizard.pairing.generate_qr")}
-        </Button>
+      {channels === null && (
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <Spinner size="md" />
+          {t("wizard.pairing.loading_channels")}
+        </div>
       )}
 
-      {pairing.last_qr_png &&
-        !["linked"].includes(pairing.state) &&
-        !expired && (
-          <div className="space-y-3">
-            <div className="inline-block p-4 bg-white border  rounded">
-              <img
-                src={`data:image/png;base64,${pairing.last_qr_png}`}
-                alt={t("wizard.pairing.qr_alt")}
-                className="w-64 h-64"
-              />
-            </div>
-            <div className="text-sm text-text-secondary flex items-center gap-2">
-              {pairing.state === "awaiting_user" ? (
-                <>
-                  <Spinner size="md" />
-                  {t("wizard.pairing.confirming")}
-                </>
-              ) : (
-                <>{t("wizard.pairing.waiting")}</>
-              )}
-            </div>
-            <Button variant="ghost" size="md" onClick={start}>
-              <RefreshCcw size={12} /> {t("wizard.pairing.regenerate_qr")}
-            </Button>
+      {channels !== null && channels.length === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-900">
+          {t("wizard.pairing.no_channels")}
+        </div>
+      )}
+
+      {channels !== null && channels.length > 0 && (
+        <>
+          <div>
+            <span className="block text-xs font-medium text-text-secondary mb-1">
+              {t("wizard.pairing.channel_label")}
+            </span>
+            <Select
+              value={selectedChannel}
+              onChange={(e) => onChannelChange(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
+            >
+              {channels.map((ch) => (
+                <option key={ch.channel} value={ch.channel}>
+                  {ch.label}
+                  {ch.linked_instances && ch.linked_instances.length > 0
+                    ? ` · ✓`
+                    : ""}
+                </option>
+              ))}
+            </Select>
           </div>
-        )}
 
-      {(pairing.state === "expired" || expired) && (
-        <div className="bg-red-50 border border-red-200 rounded p-4 text-sm text-red-800 space-y-2">
-          <div>{t("wizard.pairing.expired")}</div>
-          <Button variant="secondary" size="md" onClick={start}>
-            {t("wizard.pairing.regenerate_code")}
-          </Button>
-        </div>
-      )}
-
-      {pairing.state === "linked" && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded p-4 text-sm text-emerald-900">
-          {pairing.device_jid
-            ? t("wizard.pairing.linked_with_jid", {
-                jid: maskJid(pairing.device_jid),
-              })
-            : t("wizard.pairing.linked")}
-        </div>
+          {picked && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setModalOpen(true)}
+            >
+              {t("wizard.pairing.open_modal")}
+            </Button>
+          )}
+        </>
       )}
 
       {error && (
@@ -196,31 +142,16 @@ export default function StepPairing({ onContinue }: StepPairingProps) {
           {error}
         </div>
       )}
+
+      {picked && (
+        <PairingModal
+          open={modalOpen}
+          channel={picked}
+          agentIdHint={agent.id || ""}
+          onPaired={onPaired}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
-}
-
-/** Map the framework's snake_case wire enum onto the wizard
- *  store's local state names. Both vocabularies are very close
- *  but the store uses `idle` + `error` outside the wire surface. */
-function mapWireState(
-  s: PairingStateWire,
-): "qr_ready" | "awaiting_user" | "linked" | "expired" {
-  switch (s) {
-    case "pending":
-    case "qr_ready":
-      return "qr_ready";
-    case "awaiting_user":
-      return "awaiting_user";
-    case "linked":
-      return "linked";
-    case "expired":
-    case "cancelled":
-      return "expired";
-  }
-}
-
-function maskJid(jid: string): string {
-  if (jid.length <= 6) return jid;
-  return `${jid.slice(0, 4)}…${jid.slice(-3)}`;
 }

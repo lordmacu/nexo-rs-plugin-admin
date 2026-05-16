@@ -29,8 +29,23 @@ use nexo_microapp_sdk::{init_logging_from_env, Microapp};
 
 const APP_NAME: &str = "nexo-plugin-admin";
 
+// Bundle the manifest at compile-time so `--print-manifest` (Stage 8
+// cargo-install discovery) emits the same TOML the daemon's discovery
+// walker would otherwise read from the filesystem. Path matches the
+// daemon's accepted filenames (`plugin.toml` OR `nexo-plugin.toml`).
+const MANIFEST: &str = include_str!("../plugin.toml");
+
 #[tokio::main]
 async fn main() -> nexo_microapp_sdk::Result<()> {
+    // Phase 81.20.x admin-Stage-8 — `--print-manifest` flag. When the
+    // daemon's binary-mode discovery walker probes us with
+    // `nexo-plugin-admin --print-manifest`, we emit the bundled TOML
+    // to stdout and exit 0 BEFORE init_logging / HTTP / stdio wiring.
+    // Operators `cargo install nexo-plugin-admin` and the daemon's
+    // walker registers the plugin automatically — no manifest config
+    // edit required.
+    nexo_microapp_sdk::plugin::print_manifest_if_requested(MANIFEST);
+
     init_logging_from_env(APP_NAME);
     tracing::info!(
         server = APP_NAME,

@@ -7,6 +7,28 @@ this project uses [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.18] — 2026-05-16
+
+### Added
+
+- **Stage 8 cargo-install ergonomics.**
+  `nexo_microapp_sdk::plugin::print_manifest_if_requested(MANIFEST)`
+  inserted as the first call of `main()`. The daemon's binary-
+  mode discovery walker invokes `nexo-plugin-admin --print-manifest`
+  to extract the bundled TOML and register the plugin without
+  spawning the full subprocess. Operators install via
+  `cargo install nexo-plugin-admin` and the daemon auto-detects
+  in `$HOME/.cargo/bin/` — no operator manifest config edit.
+- `const MANIFEST: &str = include_str!("../plugin.toml")` bundles
+  the manifest at compile-time. Bytes are byte-identical to the
+  filesystem-discovered manifest.
+
+### Changed
+
+- Bump version 0.1.17 → 0.1.18 (`Cargo.toml` + `plugin.toml`
+  — the manifest version had drifted to 0.1.16 in prior
+  releases; this commit aligns it with the package version).
+
 Tracked in upstream `nexo-rs/proyecto/FOLLOWUPS.md` under
 "Phase 90 — nexo-plugin-admin":
 

@@ -11,7 +11,7 @@
 //!   - `/`           → `index.html`
 //!   - `/<known>`    → matching file with proper Content-Type
 //!   - `/<unknown>`  → SPA fallback to `index.html` so React Router
-//!                     deep links work after a hard refresh
+//!     deep links work after a hard refresh
 //!
 //! Hashed assets under `/assets/<name>-<hash>.{js,css}` are
 //! immutable; cache headers should be long-lived. Index.html is
@@ -99,7 +99,6 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use http_body_util::BodyExt;
     use tower::ServiceExt;
 
     #[tokio::test]

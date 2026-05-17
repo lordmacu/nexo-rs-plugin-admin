@@ -115,15 +115,24 @@ pub fn from_env() -> Arc<dyn TunnelAdapter> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Env-var tests share process-wide NEXO_ADMIN_TUNNEL; serialise
+    // them with a local Mutex so parallel cargo-test threads can't
+    // race (originally exposed on the windows runner where parallel
+    // schedules differ from linux).
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn tunnel_kind_unset_is_none() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("NEXO_ADMIN_TUNNEL");
         assert_eq!(TunnelKind::from_env(), TunnelKind::None);
     }
 
     #[test]
     fn tunnel_kind_cloudflared_parses() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("NEXO_ADMIN_TUNNEL", "cloudflared");
         assert_eq!(TunnelKind::from_env(), TunnelKind::Cloudflared);
         std::env::remove_var("NEXO_ADMIN_TUNNEL");
@@ -131,6 +140,7 @@ mod tests {
 
     #[test]
     fn tunnel_kind_tailscale_parses() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("NEXO_ADMIN_TUNNEL", "tailscale");
         assert_eq!(TunnelKind::from_env(), TunnelKind::Tailscale);
         std::env::remove_var("NEXO_ADMIN_TUNNEL");
@@ -138,6 +148,7 @@ mod tests {
 
     #[test]
     fn tunnel_kind_unknown_is_none() {
+        let _g = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("NEXO_ADMIN_TUNNEL", "ngrok");
         assert_eq!(TunnelKind::from_env(), TunnelKind::None);
         std::env::remove_var("NEXO_ADMIN_TUNNEL");

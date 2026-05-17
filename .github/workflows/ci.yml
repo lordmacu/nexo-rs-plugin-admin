@@ -1,0 +1,73 @@
+name: ci
+
+# Phase 96 follow-up — gate compile + test before release.yml runs
+# on a tag push. The React frontend is embedded via rust-embed so
+# `cargo build` requires `frontend/dist/` to exist; we build the
+# UI on every matrix slot (Node install + vite build ~1m extra
+# per slot, acceptable given the catch-regressions-early payoff).
+#
+# UI kit source alias mirrors release.yml's preamble: vite resolves
+# `@lordmacu/nexo-microapp-ui-react` to `../../nexo-rs-microapp-ui-react/src`,
+# so the sibling repo must be checked out.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  CARGO_NET_RETRY: 10
+  CARGO_NET_TIMEOUT: 60
+
+jobs:
+  build-test:
+    name: build + test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14, windows-latest]
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+        with:
+          path: nexo-rs-plugin-admin
+      - name: Checkout UI kit (vite source alias)
+        uses: actions/checkout@v4
+        with:
+          repository: lordmacu/nexo-microapp-ui-react
+          path: nexo-rs-microapp-ui-react
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: nexo-rs-plugin-admin
+          key: ${{ matrix.os }}
+      # The vite alias bundles the UI kit's source directly, so its own
+      # deps must be installed for vite to resolve bare imports.
+      - name: Install UI kit deps
+        working-directory: nexo-rs-microapp-ui-react
+        run: npm ci
+      - name: Build the React frontend (embedded via rust-embed)
+        working-directory: nexo-rs-plugin-admin/frontend
+        run: |
+          npm ci
+          npm run build
+      # fmt + clippy are OS-independent — run only on ubuntu.
+      - if: matrix.os == 'ubuntu-latest'
+        working-directory: nexo-rs-plugin-admin
+        run: cargo fmt -- --check
+      - if: matrix.os == 'ubuntu-latest'
+        working-directory: nexo-rs-plugin-admin
+        run: cargo clippy --all-targets --no-deps -- -D warnings
+      - working-directory: nexo-rs-plugin-admin
+        run: cargo build --locked
+      - working-directory: nexo-rs-plugin-admin
+        run: cargo test --locked

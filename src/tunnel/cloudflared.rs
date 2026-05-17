@@ -142,9 +142,11 @@ fn which(bin: &str) -> bool {
 mod tests {
     use super::*;
 
+    // `sh` is only guaranteed on POSIX. Windows agent runners have no
+    // `sh` on PATH so skip the test there.
+    #[cfg(unix)]
     #[test]
     fn which_recognises_a_real_binary() {
-        // `sh` is on every POSIX system this plugin would run on.
         assert!(which("sh"));
     }
 

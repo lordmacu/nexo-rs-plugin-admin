@@ -82,9 +82,7 @@ impl TunnelAdapter for TailscaleTunnel {
     }
 }
 
-async fn scan_for_public_url(
-    stdout: tokio::process::ChildStdout,
-) -> Option<String> {
+async fn scan_for_public_url(stdout: tokio::process::ChildStdout) -> Option<String> {
     let reader = BufReader::new(stdout);
     let mut lines = reader.lines();
     while let Ok(Some(line)) = lines.next_line().await {

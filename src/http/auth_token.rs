@@ -72,7 +72,9 @@ mod tests {
     fn app(strict: bool) -> Router {
         let live = LiveTokenState::from_strings("test-token-abc", "deadbeef01234567");
         let state = AuthTokenState { live, strict };
-        Router::new().route("/api/auth/token", get(handler)).with_state(state)
+        Router::new()
+            .route("/api/auth/token", get(handler))
+            .with_state(state)
     }
 
     #[tokio::test]

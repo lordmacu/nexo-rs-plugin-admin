@@ -109,17 +109,25 @@ pub async fn stream(
 fn accept(event: &AgentEventKind, agent: Option<&str>, tenant: Option<&str>) -> bool {
     let (ev_agent, ev_tenant): (&str, Option<&str>) = match event {
         AgentEventKind::TranscriptAppended {
-            agent_id, tenant_id, ..
+            agent_id,
+            tenant_id,
+            ..
         } => (agent_id, tenant_id.as_deref()),
         AgentEventKind::PendingInboundsDropped { agent_id, .. } => (agent_id, None),
         AgentEventKind::EscalationRequested {
-            agent_id, tenant_id, ..
+            agent_id,
+            tenant_id,
+            ..
         } => (agent_id, tenant_id.as_deref()),
         AgentEventKind::EscalationResolved {
-            agent_id, tenant_id, ..
+            agent_id,
+            tenant_id,
+            ..
         } => (agent_id, tenant_id.as_deref()),
         AgentEventKind::ProcessingStateChanged {
-            agent_id, tenant_id, ..
+            agent_id,
+            tenant_id,
+            ..
         } => (agent_id, tenant_id.as_deref()),
         _ => return true,
     };

@@ -204,9 +204,7 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
     // HTTP task — only spawned when `NEXO_ADMIN_TOKEN` was set.
     // Awaits the AdminClient from `on_admin_ready`, then runs
     // until shutdown.
-    if let (Some(cfg), Some(state), Some(session)) =
-        (http_cfg, live_token_state, admin_session)
-    {
+    if let (Some(cfg), Some(state), Some(session)) = (http_cfg, live_token_state, admin_session) {
         let shutdown = shutdown.clone();
         let port = cfg.bind.port();
         tokio::spawn(async move {

@@ -70,9 +70,7 @@ async fn login(
 }
 
 async fn logout() -> Response {
-    let cookie_value = format!(
-        "{ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0",
-    );
+    let cookie_value = format!("{ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0",);
     let mut headers = HeaderMap::new();
     headers.insert(
         header::CONTENT_TYPE,

@@ -22,8 +22,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-const REQUEST: &str =
-    r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#;
+const REQUEST: &str = r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#;
 
 fn binary_path() -> Option<PathBuf> {
     // Resolve via the convention `target/<profile>/<bin>`. CARGO_BIN_EXE_*
@@ -76,7 +75,7 @@ fn handshake_initialize_returns_manifest_reply() {
     while std::time::Instant::now() < deadline {
         line.clear();
         match reader.read_line(&mut line) {
-            Ok(0) => continue,  // EOF; child still spinning up
+            Ok(0) => continue, // EOF; child still spinning up
             Ok(_) => break,
             Err(_) => break,
         }
@@ -88,8 +87,7 @@ fn handshake_initialize_returns_manifest_reply() {
     let _ = child.wait();
 
     assert!(!line.is_empty(), "no reply received within 5s");
-    let v: serde_json::Value =
-        serde_json::from_str(line.trim()).expect("reply is valid JSON");
+    let v: serde_json::Value = serde_json::from_str(line.trim()).expect("reply is valid JSON");
     assert_eq!(v["jsonrpc"], "2.0", "wrong protocol: {line}");
     assert_eq!(v["id"], 1, "wrong id echoed: {line}");
     // Microapp builder returns `{server_info, tools, hooks}` —
@@ -115,10 +113,7 @@ fn handshake_initialize_returns_manifest_reply() {
     // AdminClient. tools[] empty in the initialize reply is a
     // contract assertion: a regression that suddenly registered
     // a tool would silently change the integration shape.
-    assert!(
-        result["tools"].is_array(),
-        "tools field missing: {line}"
-    );
+    assert!(result["tools"].is_array(), "tools field missing: {line}");
     assert_eq!(
         result["tools"].as_array().unwrap().len(),
         0,

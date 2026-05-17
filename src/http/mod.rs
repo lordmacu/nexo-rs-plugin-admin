@@ -139,8 +139,7 @@ pub fn build_router(
     // shared Arc, rotations would land on a separate copy and
     // never propagate to in-flight HTTP traffic.
     let bearer_state = Arc::clone(&live_token_state);
-    let auth_token_state =
-        auth_token::AuthTokenState::from_env(Arc::clone(&live_token_state));
+    let auth_token_state = auth_token::AuthTokenState::from_env(Arc::clone(&live_token_state));
     let admin_state = Arc::new(AdminProxyState { admin });
     let protected = Router::new()
         .route("/api/admin", post(admin_handler))
@@ -152,8 +151,7 @@ pub fn build_router(
     // `Authorization: Bearer` (backfill fetch) and `?token=`
     // (SSE stream, where EventSource can't set headers).
     let firehose = firehose_state.map(|state| {
-        crate::firehose::bind_routes(state)
-            .layer(from_fn_with_state(bearer_state, require_bearer))
+        crate::firehose::bind_routes(state).layer(from_fn_with_state(bearer_state, require_bearer))
     });
 
     let mut router = Router::new()

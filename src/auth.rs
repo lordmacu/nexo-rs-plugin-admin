@@ -113,8 +113,7 @@ impl AdminSession {
 }
 
 fn hmac_hex(secret: &[u8; 32], payload: &[u8]) -> String {
-    let mut mac =
-        HmacSha256::new_from_slice(secret).expect("HMAC accepts any key length");
+    let mut mac = HmacSha256::new_from_slice(secret).expect("HMAC accepts any key length");
     mac.update(payload);
     let digest = mac.finalize().into_bytes();
     let mut out = String::with_capacity(64);

@@ -39,7 +39,12 @@ mod tests {
     async fn healthz_returns_ok_with_version() {
         let app = Router::new().route("/healthz", get(handler));
         let res = app
-            .oneshot(Request::builder().uri("/healthz").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/healthz")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);

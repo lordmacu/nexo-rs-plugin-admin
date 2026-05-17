@@ -68,9 +68,7 @@ fn spawn_plugin() -> Option<Child> {
 
 fn http_get(path: &str) -> Option<(u16, Vec<u8>)> {
     let mut s = TcpStream::connect(("127.0.0.1", PORT)).ok()?;
-    let req = format!(
-        "GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
-    );
+    let req = format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
     use std::io::Write;
     s.write_all(req.as_bytes()).ok()?;
     let mut buf = Vec::new();

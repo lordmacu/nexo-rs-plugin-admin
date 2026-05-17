@@ -59,10 +59,8 @@ pub async fn build() -> anyhow::Result<FirehoseHandle> {
         Arc::clone(&store),
         DEFAULT_BROADCAST_CAPACITY,
     ));
-    let listener = build_persisting_listener::<AgentEventKind>(
-        AGENT_EVENT_NOTIFY_METHOD,
-        Arc::clone(&state),
-    );
+    let listener =
+        build_persisting_listener::<AgentEventKind>(AGENT_EVENT_NOTIFY_METHOD, Arc::clone(&state));
     let SweepHandle { task, shutdown } = spawn_sweep_loop(
         Arc::clone(&store),
         SweepConfig {

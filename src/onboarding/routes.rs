@@ -116,14 +116,11 @@ async fn post_llm_save(
         name: req.api_key_env.clone(),
         value: req.api_key_value,
     };
-    let secret_resp: SecretsWriteResponse = match s
-        .admin
-        .call("nexo/admin/secrets/write", secret_input)
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => return admin_error_to_response(e),
-    };
+    let secret_resp: SecretsWriteResponse =
+        match s.admin.call("nexo/admin/secrets/write", secret_input).await {
+            Ok(r) => r,
+            Err(e) => return admin_error_to_response(e),
+        };
 
     // 2. Upsert the provider.
     let upsert_input = LlmProviderUpsertInput {
@@ -149,10 +146,7 @@ async fn post_llm_save(
     };
     let daemon_probe: Option<LlmProviderProbeResponse> = s
         .admin
-        .call::<_, LlmProviderProbeResponse>(
-            "nexo/admin/llm_providers/probe",
-            probe_input,
-        )
+        .call::<_, LlmProviderProbeResponse>("nexo/admin/llm_providers/probe", probe_input)
         .await
         .ok();
 
@@ -228,10 +222,7 @@ async fn post_finish(State(s): State<Arc<OnboardingState>>) -> Response {
     Json(json!({"ok": true, "result": Value::Null})).into_response()
 }
 
-async fn resolve_default_instance(
-    s: &OnboardingState,
-    channel: &str,
-) -> Option<String> {
+async fn resolve_default_instance(s: &OnboardingState, channel: &str) -> Option<String> {
     // 1. Credentials already stored by a previous pairing.
     if let Ok(resp) = s
         .admin
@@ -277,7 +268,10 @@ fn locate_plugin_yaml(start: &std::path::Path, channel: &str) -> Option<std::pat
     let mut cur = Some(start.to_path_buf());
     for _ in 0..5 {
         let dir = cur.as_ref()?;
-        let candidate = dir.join("config").join("plugins").join(format!("{channel}.yaml"));
+        let candidate = dir
+            .join("config")
+            .join("plugins")
+            .join(format!("{channel}.yaml"));
         if candidate.is_file() {
             return Some(candidate);
         }

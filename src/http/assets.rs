@@ -91,9 +91,7 @@ fn embedded_response(path: &str, body: Vec<u8>) -> Response {
 /// outer router so `/api/*` and `/healthz` claim their routes
 /// first.
 pub fn router() -> Router {
-    Router::new()
-        .route("/", get(serve))
-        .fallback(get(serve))
+    Router::new().route("/", get(serve)).fallback(get(serve))
 }
 
 #[cfg(test)]
@@ -113,7 +111,10 @@ mod tests {
             .unwrap();
         // Either embedded (production build) or 404 (dev mode
         // before frontend build). Both states are valid.
-        assert!(matches!(res.status(), StatusCode::OK | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            res.status(),
+            StatusCode::OK | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -130,7 +131,10 @@ mod tests {
             .unwrap();
         // Same valid states — the body lookup logic is
         // exercised either way.
-        assert!(matches!(res.status(), StatusCode::OK | StatusCode::NOT_FOUND));
+        assert!(matches!(
+            res.status(),
+            StatusCode::OK | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
@@ -142,7 +146,10 @@ mod tests {
             .get(header::CACHE_CONTROL)
             .and_then(|v| v.to_str().ok())
             .unwrap_or("");
-        assert!(cc.contains("immutable"), "expected immutable cache, got {cc}");
+        assert!(
+            cc.contains("immutable"),
+            "expected immutable cache, got {cc}"
+        );
     }
 
     #[tokio::test]

@@ -12,7 +12,7 @@ use nexo_microapp_sdk::admin::{AdminClient, AdminError};
 use nexo_microapp_sdk::wizard::CachedSnapshot;
 use nexo_tool_meta::admin::{
     agents::{AgentsListFilter, AgentsListResponse},
-    credentials::{CredentialsListFilter, CredentialsListResponse, CredentialSummary},
+    credentials::{CredentialSummary, CredentialsListFilter, CredentialsListResponse},
     llm_providers::{LlmProvidersListFilter, LlmProvidersListResponse},
 };
 use serde::Serialize;

@@ -89,10 +89,11 @@ export function GenericScreen({ plugin, screen }: GenericScreenProps) {
     }
   };
 
-  if (status === "loading") return <p className="plugin-screen__status">Loading…</p>;
+  if (status === "loading")
+    return <p className="p-4 text-sm text-text-secondary">Loading…</p>;
   if (status === "error" || !descriptor) {
     return (
-      <p className="plugin-screen__status" role="alert">
+      <p className="p-4 text-sm text-red-700" role="alert">
         Failed to load screen.
       </p>
     );
@@ -106,14 +107,20 @@ export function GenericScreen({ plugin, screen }: GenericScreenProps) {
   };
 
   return (
-    <section className="plugin-screen" data-plugin={plugin} data-screen={screen}>
-      <h2>{descriptor.title}</h2>
+    <section className="space-y-4" data-plugin={plugin} data-screen={screen}>
+      <h2 className="text-lg font-semibold text-text-primary">
+        {descriptor.title}
+      </h2>
       {errors._form ? (
-        <p role="alert" className="plugin-screen__error">
+        <p
+          role="alert"
+          className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-800"
+        >
           {errors._form}
         </p>
       ) : null}
       <form
+        className="space-y-4 rounded-lg border bg-panel p-4 shadow-sm"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
@@ -130,7 +137,11 @@ export function GenericScreen({ plugin, screen }: GenericScreenProps) {
               error={errors[f.key]}
             />
           ))}
-        <button type="submit" disabled={saving}>
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
           {saving ? "Saving…" : "Save"}
         </button>
       </form>
@@ -174,12 +185,24 @@ function RefreshWidget({
   }, [pull, intervalSeconds]);
 
   return (
-    <div className="plugin-screen__refresh">
-      <button type="button" onClick={() => void pull()}>
+    <div className="space-y-2 rounded-lg border bg-panel p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={() => void pull()}
+        className="rounded border border-border-DEFAULT bg-panel-alt px-3 py-1.5 text-sm font-medium text-text-primary hover:bg-panel-hover"
+      >
         Refresh
       </button>
-      {error ? <p role="alert">{error}</p> : null}
-      {data !== null ? <pre>{JSON.stringify(data, null, 2)}</pre> : null}
+      {error ? (
+        <p role="alert" className="text-xs text-red-700">
+          {error}
+        </p>
+      ) : null}
+      {data !== null ? (
+        <pre className="overflow-auto rounded border border-border-DEFAULT bg-panel-alt p-2 text-xs font-mono text-text-primary">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      ) : null}
     </div>
   );
 }

@@ -154,6 +154,30 @@ export default function StepLlm({ onContinue }: StepLlmProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Phase 97 — re-sync agent.model_id when the LLM catalog
+  // finishes loading. `reload()` may run first with an empty
+  // catalog: `defaultModelForInstance` returns null and the
+  // agent draft keeps the wizard store's MiniMax-M2.5 default
+  // even though the operator selected an Anthropic instance.
+  // This effect closes the gap by re-applying the model once
+  // the catalog is available.
+  useEffect(() => {
+    if (!catalog || catalog.length === 0) return;
+    if (!instances || instances.length === 0) return;
+    const currentInstance = instances.find((i) => i.id === llm.provider_id);
+    if (!currentInstance) return;
+    const cached = loadInstanceModels()[currentInstance.id];
+    const resolved =
+      cached?.model ?? defaultModelForInstance(currentInstance.id);
+    if (resolved) {
+      updateAgent({
+        model_provider: currentInstance.id,
+        model_id: resolved,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalog, instances, llm.provider_id]);
+
   function selectInstance(id: string) {
     const inst = instances?.find((i) => i.id === id);
     if (!inst) return;

@@ -49,9 +49,17 @@ export default function Wizard({ initial, onComplete }: WizardProps) {
     if (searchParams.get("wizard") === "new-agent") {
       reset();
       setStep(0);
-    } else {
-      loadFromBootstrap(initial);
+      // Intent "new-agent" means a fresh run from Bienvenida.
+      // Ignore any sibling `?step=agent` shortcut on this entry
+      // — the previous behavior dropped the operator into the
+      // agent step on dashboards that had pairing already, but
+      // that skipped the welcome screen and the LLM-instance
+      // pre-fill the operator needed to make sense of the
+      // wizard. Honor `step=agent` only when `wizard=new-agent`
+      // is NOT also present.
+      return;
     }
+    loadFromBootstrap(initial);
     // M7.cmdk — `?step=agent` jumps directly to step 3 (Agent
     // creation) when the operator has at least one paired
     // device. Used by the command-palette "Crear nuevo agente"

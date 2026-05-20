@@ -575,6 +575,11 @@ const es = {
     "Aún no hay agentes configurados. Usá Nuevo agente para crear el primero.",
   "agents.list.empty_em": "Nuevo agente",
   "agents.inactive": "inactivo",
+  "agents.toggle.enable_title":
+    "Habilitar agente — el daemon hace hot-spawn del runtime y vuelve a recibir mensajes.",
+  "agents.toggle.disable_title":
+    "Deshabilitar agente — el daemon hace hot-remove del runtime, deja de procesar mensajes hasta que lo vuelvas a habilitar.",
+  "agents.toggle.error": "No pude cambiar el estado: {error}",
   "agents.sellers_tooltip": "Sellers de marketing usando este agente:\n{names}",
   "agents.sellers_count_one": "📧 {count} email seller",
   "agents.sellers_count_other": "📧 {count} email sellers",
@@ -631,6 +636,118 @@ const es = {
   "agents.edit.bind_button": "Vincular",
   "agents.edit.bind_busy": "...",
   "agents.edit.other_bindings": "Otros bindings (solo lectura)",
+
+  // ── Phase 97.UI — accordion de capabilities avanzadas ───────
+  "agents.advanced.enabled": "Habilitado",
+  "agents.advanced.toggle_help":
+    "Activa o desactiva el bloque manteniendo el resto de los parámetros.",
+  "agents.advanced.show_json": "Editar JSON avanzado",
+  "agents.advanced.json_parse_error": "JSON inválido: {error}",
+
+  "agents.advanced.tier1.title": "Identidad y permisos básicos",
+  "agents.advanced.tier1.subtitle":
+    "Multi-tenant scope, descripción, plugins y reglas de delegación.",
+  "agents.advanced.tier3.title": "Rate limits y políticas avanzadas",
+  "agents.advanced.tier3.subtitle":
+    "Configuración detallada vía JSON. Shapes en docs.",
+  "agents.advanced.tier4.title": "Credenciales (avanzado)",
+  "agents.advanced.tier4.subtitle":
+    "Mapping de credenciales del agente. Riesgo si lo configurás mal.",
+
+  // Tier 1
+  "agents.advanced.tenant_id": "Tenant ID",
+  "agents.advanced.tenant_id_help":
+    "Scope multi-tenant. Vacío = agente global (operator-level, no tenant-owned).",
+  "agents.advanced.description": "Descripción",
+  "agents.advanced.description_help":
+    "Línea corta usada en el bloque PEERS auto-generado que ven otros agentes.",
+  "agents.advanced.plugins": "Plugins conocidos",
+  "agents.advanced.plugins_help":
+    "Lista soft de plugin ids que el agente reconoce. Vacío = todos.",
+  "agents.advanced.allowed_delegates": "Puede delegar a",
+  "agents.advanced.allowed_delegates_help":
+    "Glob con sufijo * permitido. Vacío = sin restricción (delegar a cualquiera).",
+  "agents.advanced.accept_delegates_from": "Acepta delegaciones de",
+  "agents.advanced.accept_delegates_from_help":
+    "Inverso. Vacío = acepta de cualquiera (back-compat).",
+  "agents.advanced.skills": "Skills locales",
+  "agents.advanced.skills_dir": "Directorio de skills",
+
+  // Tier 2 toggleables
+  "agents.advanced.config_tool": "Self-edit de configuración",
+  "agents.advanced.config_tool_help":
+    "PELIGROSO: permite al LLM editar agents.yaml/llm.yaml. Requiere aprobación de operator.",
+  "agents.advanced.team": "Spawn de sub-agentes (Team)",
+  "agents.advanced.team_help":
+    "Registra los 5 Team* tools. El agente puede crear y coordinar sub-agentes.",
+  "agents.advanced.repl": "REPL persistente",
+  "agents.advanced.repl_help":
+    "PELIGROSO: subprocess Python/Node/bash persistente entre turnos. Sandbox recomendado.",
+  "agents.advanced.proactive": "Tick-loop proactivo",
+  "agents.advanced.proactive_help":
+    "El agente se 'despierta' periódicamente. Distinto de heartbeat — usa Sleep tool.",
+  "agents.advanced.lsp": "LSP (code intelligence)",
+  "agents.advanced.lsp_help":
+    "Habilita tools LSP para análisis de código (hover, go-to-def, etc).",
+  "agents.advanced.brief": "Mensajes proactivos al usuario",
+  "agents.advanced.brief_help":
+    "Registra send_user_message tool + apéndice 'talking to the user' al system prompt.",
+  "agents.advanced.channels": "MCP channel routing",
+  "agents.advanced.channels_help":
+    "Acepta notifications inbound de MCP servers. Per-binding allowlists cierran el loop.",
+  "agents.advanced.away_summary": "Resumen de reconexión",
+  "agents.advanced.away_summary_help":
+    "Después de N horas de silencio, envía un digest resumiendo lo pasado al primer inbound.",
+  "agents.advanced.workspace_git": "Workspace git-backed",
+  "agents.advanced.workspace_git_help":
+    "Versionado git de IDENTITY/SOUL/USER/AGENTS.md. Forense + rollback.",
+  "agents.advanced.auto_dream": "AutoDream post-turn",
+  "agents.advanced.auto_dream_help":
+    "Consolidation pass después de cada turno (memory dreaming).",
+  "agents.advanced.assistant_mode": "Modo asistente",
+  "agents.advanced.assistant_mode_help":
+    "Postura proactiva — addendum al system prompt + initial-team spawn.",
+  "agents.advanced.dispatch_policy": "Política de dispatch",
+  "agents.advanced.dispatch_policy_help":
+    "Acceso a project-tracker tools (program_phase, cancel_agent, etc).",
+  "agents.advanced.dispatch_mode": "Modo",
+
+  // Tier 3 JSON
+  "agents.advanced.tool_rate_limits": "Tool rate limits",
+  "agents.advanced.tool_rate_limits_help":
+    'Ej: { "per_tool": { "memory_save": { "per_minute": 10 } } }',
+  "agents.advanced.sender_rate_limit": "Sender rate limit",
+  "agents.advanced.sender_rate_limit_help":
+    'Ej: { "per_sender_per_minute": 20, "burst": 5 }',
+  "agents.advanced.tool_args_validation": "Validación de argumentos",
+  "agents.advanced.tool_args_validation_help": 'Ej: { "enabled": true }',
+  "agents.advanced.remote_triggers": "Remote triggers",
+  "agents.advanced.remote_triggers_help":
+    'Ej: [{ "name": "deploy_done", "topic": "events.ci.deploy" }]',
+  "agents.advanced.dreaming": "Dreaming (memory consolidation)",
+  "agents.advanced.dreaming_help":
+    'Ej: { "enabled": true, "interval_secs": 3600, "min_score": 0.35 }',
+  "agents.advanced.context_optimization": "Context optimization",
+  "agents.advanced.context_optimization_help":
+    'Ej: { "compaction": true, "prompt_cache": false }',
+  "agents.advanced.outbound_allowlist": "Outbound allowlist",
+  "agents.advanced.outbound_allowlist_help":
+    'Por canal. Ej: { "whatsapp": ["+57300..."], "telegram": ["@cristian"] }',
+  "agents.advanced.pairing_policy": "Pairing policy",
+  "agents.advanced.pairing_policy_help": 'Ej: { "auto_challenge": true }',
+  "agents.advanced.link_understanding": "Link understanding",
+  "agents.advanced.link_understanding_help":
+    'Ej: { "enabled": true, "max_links_per_turn": 3 }',
+  "agents.advanced.web_search": "Web search",
+  "agents.advanced.web_search_help":
+    'Ej: { "enabled": true, "provider": "tavily" }',
+
+  // Tier 4
+  "agents.advanced.credentials": "Credentials",
+  "agents.advanced.credentials_help":
+    'Ej: { "google": "kate-personal", "whatsapp_outbound": "kate" }',
+  "agents.advanced.google_auth": "Google auth",
+  "agents.advanced.google_auth_help": 'Ej: { "client_id": "..." }',
   "agents.edit.bind_partial_failure":
     "vinculado, pero {agent} falló: {error}",
   "agents.edit.unbind_partial_failure":
@@ -911,6 +1028,60 @@ const es = {
   // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",
   "plugins.action.reload": "Actualizar",
+  "plugins.action.install": "Instalar plugin",
+  "plugins.action.scan": "Escanear",
+  "plugins.action.scanning": "Escaneando…",
+  "plugins.action.scan_title":
+    "Re-descubre plugins instalados en disco y los hot-spawnea sin reiniciar el daemon.",
+  "plugins.scan.heading":
+    "Escaneo completo: {spawned} plugins activados, {stale} stale.",
+  "plugins.scan.spawned": "Activados: {ids}",
+  "plugins.scan.stale":
+    "Stale (registrados en runtime pero ya no en disco): {ids}",
+  "plugins.scan.warnings_summary": "{count} advertencias durante el escaneo",
+  "plugins.scan.error": "Error al escanear: {error}",
+  "plugins.install.title": "Instalar plugin",
+  "plugins.install.subtitle":
+    "Instalar un plugin descargando el binario precompilado desde GitHub Releases, o compilando con cargo install (requiere rustc).",
+  "plugins.install.source_label": "Origen",
+  "plugins.install.source_release": "Release prebuilt (recomendado)",
+  "plugins.install.source_release_hint":
+    "Descarga binario precompilado para tu sistema desde GitHub Releases. Cero dependencias, ~5 segundos.",
+  "plugins.install.source_cargo": "cargo install (compila local)",
+  "plugins.install.source_cargo_hint":
+    "Compila desde fuentes con rustc. Tarda minutos. Sólo si tenés Rust toolchain instalado.",
+  "plugins.install.crate_name": "Nombre del crate",
+  "plugins.install.crate_name_invalid":
+    "Sólo letras minúsculas, números, guiones y subrayados.",
+  "plugins.install.version": "Versión",
+  "plugins.install.version_invalid":
+    "Sólo letras, números, puntos, +, -.",
+  "plugins.install.version_required_release":
+    "Release requiere versión explícita (no se resuelve 'latest').",
+  "plugins.install.repo": "Repo GitHub",
+  "plugins.install.repo_invalid":
+    "Debe ser <org>/<nombre>, sólo letras, números y - _ .",
+  "plugins.install.repo_hint":
+    "Default: lordmacu/<crate_name>. Cambialo si es un fork.",
+  "plugins.install.force": "Forzar reinstalación",
+  "plugins.install.force_cargo_hint":
+    "Pasa --force a cargo install para sobreescribir una versión existente.",
+  "plugins.install.force_release_hint":
+    "Reemplaza el binario en disco aunque el sha256 sea idéntico.",
+  "plugins.install.cancel": "Cancelar",
+  "plugins.install.submit": "Instalar",
+  "plugins.install.installing": "Instalando…",
+  "plugins.install.success_heading":
+    "✓ {crate} v{version} instalado",
+  "plugins.install.success_restart_required":
+    "Plugin instalado y hot-spawneado en runtime. Ya está activo sin reiniciar.",
+  "plugins.install.success_spawned":
+    "Plugins activados: {ids}",
+  "plugins.install.success_warnings":
+    "Advertencias durante hot-spawn: {warnings}",
+  "plugins.install.cargo_stdout": "cargo stdout",
+  "plugins.install.cargo_stderr": "cargo stderr",
+  "plugins.install.done": "Listo",
   "plugins.generated_at": "Snapshot {ts}",
   "plugins.summary.loaded": "Cargados",
   "plugins.summary.scanned": "Escaneados",
@@ -920,6 +1091,17 @@ const es = {
   "plugins.loaded.empty": "No hay plugins cargados.",
   "plugins.diagnostics.title": "Diagnósticos",
   "plugins.empty.body": "Sin plugins instalados. Añade manifests a las rutas de discovery configuradas y reinicia el daemon.",
+
+  // Phase 98.12 — pestañas WordPress-style + catálogo Available.
+  "plugins.tabs.aria_label": "Pestañas de la vista de plugins",
+  "plugins.tabs.installed": "Instalados",
+  "plugins.tabs.available": "Disponibles",
+  "plugins.available.loading": "Cargando catálogo público…",
+  "plugins.available.empty":
+    "No hay plugins disponibles desde las fuentes públicas ahora. Prueba a refrescar el índice, o configura GITHUB_TOKEN si saturaste el límite anónimo.",
+  "plugins.available.error": "Error al cargar catálogo: {error}",
+  "plugins.available.placeholder_count":
+    "{count} plugins descubiertos (la fase 98.13 los renderiza con tarjetas + badges)",
 
   // Phase 81.21.b.b follow-up — modal de restart manual.
   "plugins.restart.title": "Reiniciar plugin",

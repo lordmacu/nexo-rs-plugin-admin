@@ -15,7 +15,12 @@ import { useNavigate } from "react-router-dom";
 import { useUrlState } from "../../shell/useUrlState";
 import { useConversations } from "../../store/conversations";
 import { useAuth } from "../../store/auth";
-import { useBootstrap, configuredAgentIds } from "../../store/bootstrap";
+import {
+  listAgents,
+  getAgent,
+  type AgentSummary,
+  type AgentDetail,
+} from "../../api/agents";
 import { useCmdk } from "../../store/cmdk";
 import { useLabels } from "../../store/labels";
 import { useSoundPref } from "../../store/soundPref";
@@ -59,6 +64,14 @@ export default function Sidebar() {
     "chats.label",
     null,
   );
+  const [filter_agent_id, setFilterAgentId] = useUrlState<string | null>(
+    "chats.agent",
+    null,
+  );
+  const [filter_channel, setFilterChannel] = useUrlState<string | null>(
+    "chats.channel",
+    null,
+  );
   const [search_modal_open, setSearchModalOpen] = useState(false);
   const [label_modal_open, setLabelModalOpen] = useState(false);
   const [rotate_token_open, setRotateTokenOpen] = useState(false);
@@ -66,23 +79,102 @@ export default function Sidebar() {
 
   const labels = useLabels((s) => s.labels);
   const assignments = useLabels((s) => s.assignments);
-  const bootstrap = useBootstrap((s) => s.bootstrap);
+
+  // Phase chat-filters — operator picks an agent first; if that
+  // agent has more than one inbound binding (e.g. WhatsApp +
+  // Telegram), a second dropdown lets them narrow by channel.
+  // Without this filter pair the sidebar shows every firehose
+  // event the daemon ever emitted (including events for deleted
+  // / renamed agents) which is the bug surfaced by the operator:
+  // "5 chats but I see nothing" — the legacy paired_devices
+  // filter silently dropped every conversation when the
+  // credential's `agent_ids` list wasn't populated.
+  const [agents_list, setAgentsList] = useState<readonly AgentSummary[]>([]);
+  const [agent_details, setAgentDetails] = useState<
+    Map<string, AgentDetail>
+  >(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const list = await listAgents();
+        if (cancelled) return;
+        setAgentsList(list);
+        // Fetch details in parallel — getAgent.inbound_bindings
+        // drives the per-agent channel dropdown.
+        const details = await Promise.all(
+          list.map((a) => getAgent(a.id).catch(() => null)),
+        );
+        if (cancelled) return;
+        const map = new Map<string, AgentDetail>();
+        for (const d of details) {
+          if (d) map.set(d.id, d);
+        }
+        setAgentDetails(map);
+      } catch {
+        // ignore — sidebar falls back to "no filter" mode.
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-select the first agent once the list lands; preserves
+  // an existing operator pick if the URL already carried one
+  // that's still in the list. Without this the operator opens
+  // the chats page and sees nothing until they click a dropdown.
+  useEffect(() => {
+    if (agents_list.length === 0) return;
+    if (filter_agent_id && agents_list.some((a) => a.id === filter_agent_id)) {
+      return;
+    }
+    setFilterAgentId(agents_list[0]?.id ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agents_list]);
+
+  // Selected agent's bindings; drives whether the channel
+  // dropdown is rendered.
+  const selected_agent_bindings = useMemo(() => {
+    if (!filter_agent_id) return [];
+    const detail = agent_details.get(filter_agent_id);
+    return detail?.inbound_bindings ?? [];
+  }, [filter_agent_id, agent_details]);
+
+  // Reset the channel filter when the operator picks an agent
+  // that doesn't expose the previously-selected channel.
+  useEffect(() => {
+    if (filter_channel === null) return;
+    const has_channel = selected_agent_bindings.some(
+      (b) => b.plugin === filter_channel,
+    );
+    if (!has_channel) setFilterChannel(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter_agent_id, selected_agent_bindings]);
 
   const filtered = useMemo(() => {
     const sorted = [...conversations.values()].sort(
       (a, b) => b.last_message_at - a.last_message_at,
     );
-    // Drop conversations whose `agent_id` is no longer attached
-    // to a paired channel instance — the firehose replays
-    // historical events for deleted / unbound agents and we
-    // don't want those polluting the operator's queue. While
-    // bootstrap is still loading (`loaded === false`) we stay
-    // optimistic and show everything to avoid a first-paint
-    // flash of an empty sidebar.
-    const { ids: paired_agent_ids, loaded } = configuredAgentIds(bootstrap);
-    let scoped = loaded
-      ? sorted.filter((c) => paired_agent_ids.has(c.agent_id))
-      : sorted;
+    let scoped = sorted;
+    // Agent filter — operator-driven. Until the agents list
+    // arrives we stay optimistic + show every conversation so
+    // the first paint isn't an empty pane.
+    if (filter_agent_id !== null) {
+      scoped = scoped.filter((c) => c.agent_id === filter_agent_id);
+    } else if (agents_list.length > 0) {
+      // Agents loaded but operator hasn't picked one yet (the
+      // auto-select effect runs next tick): hide conversations
+      // whose `agent_id` is no longer in the configured set so
+      // the queue isn't polluted by deleted / renamed agents.
+      const known = new Set(agents_list.map((a) => a.id));
+      scoped = scoped.filter((c) => known.has(c.agent_id));
+    }
+    if (filter_channel !== null) {
+      scoped = scoped.filter((c) => c.channel === filter_channel);
+    }
     if (filter_label_id !== null) {
       scoped = scoped.filter((c) => {
         const ids = assignments.get(c.key);
@@ -97,7 +189,15 @@ export default function Sidebar() {
         c.agent_id,
       ]),
     );
-  }, [conversations, query, filter_label_id, assignments, bootstrap]);
+  }, [
+    conversations,
+    query,
+    filter_label_id,
+    filter_agent_id,
+    filter_channel,
+    agents_list,
+    assignments,
+  ]);
 
   // `/` quick-focus shortcut. Skip when an input/textarea/
   // contenteditable element is the active target so it doesn't
@@ -255,6 +355,42 @@ export default function Sidebar() {
           onClear={() => setQuery("")}
         />
       </div>
+      {agents_list.length > 0 && (
+        <div className="px-4 pt-2 flex flex-col gap-2">
+          <label className="block text-xs font-medium text-text-secondary">
+            Agente
+            <select
+              className="mt-1 w-full border rounded px-2 py-1 text-sm bg-white"
+              value={filter_agent_id ?? ""}
+              onChange={(e) => setFilterAgentId(e.target.value || null)}
+            >
+              {agents_list.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.id}
+                </option>
+              ))}
+            </select>
+          </label>
+          {selected_agent_bindings.length > 1 && (
+            <label className="block text-xs font-medium text-text-secondary">
+              Canal
+              <select
+                className="mt-1 w-full border rounded px-2 py-1 text-sm bg-white"
+                value={filter_channel ?? ""}
+                onChange={(e) => setFilterChannel(e.target.value || null)}
+              >
+                <option value="">Todos</option>
+                {selected_agent_bindings.map((b, idx) => (
+                  <option key={`${b.plugin}-${idx}`} value={b.plugin}>
+                    {b.plugin}
+                    {b.instance ? ` · ${b.instance}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
       {labels.size > 0 && (
         <div className="px-4 pt-2">
           <LabelFilterChips

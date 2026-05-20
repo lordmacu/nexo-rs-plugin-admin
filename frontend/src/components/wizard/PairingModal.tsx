@@ -91,7 +91,26 @@ export default function PairingModal({
             <QrFlow
               channelId={channel.channel}
               agentIdHint={agentIdHint}
-              onPaired={(jid) => onPaired(channel.channel, jid)}
+              instanceFieldLabel={
+                channel.fields?.find(
+                  (f) => f.name === (channel.instance_field ?? "instance"),
+                )?.label
+              }
+              instanceFieldHelp={
+                channel.fields?.find(
+                  (f) => f.name === (channel.instance_field ?? "instance"),
+                )?.help ?? undefined
+              }
+              instanceFieldPlaceholder={
+                channel.fields?.find(
+                  (f) => f.name === (channel.instance_field ?? "instance"),
+                )?.placeholder ?? undefined
+              }
+              instanceFieldRequired={
+                channel.instance_field !== undefined &&
+                channel.instance_field !== null
+              }
+              onPaired={(instance) => onPaired(channel.channel, instance)}
             />
           )}
           {channel.kind === "form" && (
@@ -130,10 +149,23 @@ export default function PairingModal({
 function QrFlow({
   channelId,
   agentIdHint,
+  instanceFieldLabel,
+  instanceFieldHelp,
+  instanceFieldPlaceholder,
+  instanceFieldRequired,
   onPaired,
 }: {
   channelId: string;
   agentIdHint: string;
+  /** When set, the operator must type a label BEFORE the QR is
+   *  generated. The label becomes both the `instance` parameter
+   *  to `pairing/start` AND the value returned via `onPaired`,
+   *  so the wizard's downstream agent binding matches whatever
+   *  the persister wrote into the plugin yaml. */
+  instanceFieldLabel?: string | undefined;
+  instanceFieldHelp?: string | undefined;
+  instanceFieldPlaceholder?: string | undefined;
+  instanceFieldRequired?: boolean | undefined;
   onPaired: (instance: string) => void;
 }) {
   const t = useT();
@@ -145,14 +177,34 @@ function QrFlow({
     "idle" | "qr_ready" | "awaiting_user" | "linked" | "expired" | "error"
   >("idle");
   const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null);
+  // Operator-chosen short label (e.g. "ventas", "soporte"). Used
+  // as the `instance` discriminator for multi-account channels
+  // (WhatsApp). Empty string when the channel didn't declare an
+  // instance_field — preserves legacy single-account behavior.
+  const [instanceLabel, setInstanceLabel] = useState("");
+
+  function canStart(): boolean {
+    if (!instanceFieldRequired) return true;
+    return instanceLabel.trim().length > 0;
+  }
 
   async function start() {
+    if (!canStart()) {
+      setError(`Falta ${instanceFieldLabel ?? "nombre"}`);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      const params: Record<string, unknown> = {
+        agent_id: agentIdHint || "bootstrap",
+        channel: channelId,
+      };
+      const inst = instanceLabel.trim();
+      if (inst.length > 0) params.instance = inst;
       const resp = await adminCall<PairingStartResponse>(
         "nexo/admin/pairing/start",
-        { agent_id: agentIdHint || "bootstrap", channel: channelId },
+        params,
       );
       setChallengeId(resp.challenge_id);
       setExpiresAtMs(resp.expires_at_ms);
@@ -177,8 +229,15 @@ function QrFlow({
       setState(next);
       if (status.data?.qr_png_base64) setQrPng(status.data.qr_png_base64);
       if (next === "linked") {
-        const jid = status.data?.device_jid ?? "";
-        window.setTimeout(() => onPaired(jid), 600);
+        // Prefer the operator-chosen label as `instance` so the
+        // wizard's downstream agent binding lines up with the
+        // plugin yaml the persister just wrote. Fall back to
+        // the wire-emitted device_jid only when the channel
+        // didn't declare an instance_field (legacy
+        // single-account flow).
+        const label = instanceLabel.trim();
+        const out = label.length > 0 ? label : status.data?.device_jid ?? "";
+        window.setTimeout(() => onPaired(out), 600);
       }
     }
 
@@ -214,10 +273,36 @@ function QrFlow({
   return (
     <div className="space-y-3">
       {!qrPng && state === "idle" && (
-        <Button variant="primary" size="md" onClick={start} disabled={busy}>
-          {busy ? <Spinner size="md" /> : null}
-          {t("wizard.pairing.generate_qr")}
-        </Button>
+        <>
+          {instanceFieldRequired && (
+            <div>
+              <label className="block text-xs font-medium text-text-secondary mb-1">
+                {instanceFieldLabel ?? "Nombre"}
+                <span className="text-red-500"> *</span>
+              </label>
+              <Input
+                value={instanceLabel}
+                onChange={(e) => setInstanceLabel(e.target.value)}
+                placeholder={instanceFieldPlaceholder ?? ""}
+                disabled={busy}
+              />
+              {instanceFieldHelp && (
+                <p className="text-xs text-text-tertiary mt-1">
+                  {instanceFieldHelp}
+                </p>
+              )}
+            </div>
+          )}
+          <Button
+            variant="primary"
+            size="md"
+            onClick={start}
+            disabled={busy || !canStart()}
+          >
+            {busy ? <Spinner size="md" /> : null}
+            {t("wizard.pairing.generate_qr")}
+          </Button>
+        </>
       )}
 
       {qrPng && state !== "linked" && !expired && (

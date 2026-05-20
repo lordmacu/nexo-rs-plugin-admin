@@ -574,6 +574,11 @@ const en = {
     "No agents configured yet. Use New agent to create the first one.",
   "agents.list.empty_em": "New agent",
   "agents.inactive": "inactive",
+  "agents.toggle.enable_title":
+    "Enable agent — daemon hot-spawns the runtime and resumes message processing.",
+  "agents.toggle.disable_title":
+    "Disable agent — daemon hot-removes the runtime; messages stop being processed until you re-enable.",
+  "agents.toggle.error": "Could not toggle agent: {error}",
   "agents.sellers_tooltip": "Marketing sellers using this agent:\n{names}",
   "agents.sellers_count_one": "📧 {count} email seller",
   "agents.sellers_count_other": "📧 {count} email sellers",
@@ -629,6 +634,118 @@ const en = {
   "agents.edit.bind_button": "Bind",
   "agents.edit.bind_busy": "...",
   "agents.edit.other_bindings": "Other bindings (read-only)",
+
+  // ── Phase 97.UI — advanced capabilities accordion ────────────
+  "agents.advanced.enabled": "Enabled",
+  "agents.advanced.toggle_help":
+    "Flips the block on/off while preserving every other parameter.",
+  "agents.advanced.show_json": "Edit advanced JSON",
+  "agents.advanced.json_parse_error": "Invalid JSON: {error}",
+
+  "agents.advanced.tier1.title": "Identity and basic permissions",
+  "agents.advanced.tier1.subtitle":
+    "Multi-tenant scope, description, plugins and delegation rules.",
+  "agents.advanced.tier3.title": "Rate limits and advanced policies",
+  "agents.advanced.tier3.subtitle":
+    "Detailed config via JSON. Shapes in docs.",
+  "agents.advanced.tier4.title": "Credentials (advanced)",
+  "agents.advanced.tier4.subtitle":
+    "Agent credential bindings. Risky if misconfigured.",
+
+  // Tier 1
+  "agents.advanced.tenant_id": "Tenant ID",
+  "agents.advanced.tenant_id_help":
+    "Multi-tenant scope. Empty = global agent (operator-level).",
+  "agents.advanced.description": "Description",
+  "agents.advanced.description_help":
+    "Short line used in the auto-generated PEERS block other agents see.",
+  "agents.advanced.plugins": "Known plugins",
+  "agents.advanced.plugins_help":
+    "Soft list of plugin ids the agent acknowledges. Empty = all.",
+  "agents.advanced.allowed_delegates": "Can delegate to",
+  "agents.advanced.allowed_delegates_help":
+    "Trailing * glob supported. Empty = no restriction.",
+  "agents.advanced.accept_delegates_from": "Accepts delegations from",
+  "agents.advanced.accept_delegates_from_help":
+    "Inverse. Empty = accepts from anyone (back-compat).",
+  "agents.advanced.skills": "Local skills",
+  "agents.advanced.skills_dir": "Skills directory",
+
+  // Tier 2 toggles
+  "agents.advanced.config_tool": "Config self-edit",
+  "agents.advanced.config_tool_help":
+    "DANGEROUS: lets the LLM edit agents.yaml/llm.yaml. Operator approval required.",
+  "agents.advanced.team": "Sub-agent spawn (Team)",
+  "agents.advanced.team_help":
+    "Registers 5 Team* tools. Agent can create and coordinate sub-agents.",
+  "agents.advanced.repl": "Persistent REPL",
+  "agents.advanced.repl_help":
+    "DANGEROUS: persistent Python/Node/bash subprocess across turns. Sandbox recommended.",
+  "agents.advanced.proactive": "Proactive tick-loop",
+  "agents.advanced.proactive_help":
+    "Agent wakes up periodically. Distinct from heartbeat — uses Sleep tool.",
+  "agents.advanced.lsp": "LSP (code intelligence)",
+  "agents.advanced.lsp_help":
+    "Enables LSP tools for code analysis (hover, go-to-def, etc).",
+  "agents.advanced.brief": "Proactive user messages",
+  "agents.advanced.brief_help":
+    "Registers send_user_message tool + 'talking to the user' addendum.",
+  "agents.advanced.channels": "MCP channel routing",
+  "agents.advanced.channels_help":
+    "Accepts MCP server inbound notifications. Per-binding allowlists close the loop.",
+  "agents.advanced.away_summary": "Reconnection digest",
+  "agents.advanced.away_summary_help":
+    "After N hours of silence, sends a digest summarising elapsed events on first inbound.",
+  "agents.advanced.workspace_git": "Git-backed workspace",
+  "agents.advanced.workspace_git_help":
+    "Git versioning of IDENTITY/SOUL/USER/AGENTS.md. Forensics + rollback.",
+  "agents.advanced.auto_dream": "AutoDream post-turn",
+  "agents.advanced.auto_dream_help":
+    "Consolidation pass after every turn (memory dreaming).",
+  "agents.advanced.assistant_mode": "Assistant mode",
+  "agents.advanced.assistant_mode_help":
+    "Proactive posture — system prompt addendum + initial-team spawn.",
+  "agents.advanced.dispatch_policy": "Dispatch policy",
+  "agents.advanced.dispatch_policy_help":
+    "Access to project-tracker tools (program_phase, cancel_agent, etc).",
+  "agents.advanced.dispatch_mode": "Mode",
+
+  // Tier 3 JSON
+  "agents.advanced.tool_rate_limits": "Tool rate limits",
+  "agents.advanced.tool_rate_limits_help":
+    'e.g. { "per_tool": { "memory_save": { "per_minute": 10 } } }',
+  "agents.advanced.sender_rate_limit": "Sender rate limit",
+  "agents.advanced.sender_rate_limit_help":
+    'e.g. { "per_sender_per_minute": 20, "burst": 5 }',
+  "agents.advanced.tool_args_validation": "Args validation",
+  "agents.advanced.tool_args_validation_help": 'e.g. { "enabled": true }',
+  "agents.advanced.remote_triggers": "Remote triggers",
+  "agents.advanced.remote_triggers_help":
+    'e.g. [{ "name": "deploy_done", "topic": "events.ci.deploy" }]',
+  "agents.advanced.dreaming": "Dreaming (memory consolidation)",
+  "agents.advanced.dreaming_help":
+    'e.g. { "enabled": true, "interval_secs": 3600, "min_score": 0.35 }',
+  "agents.advanced.context_optimization": "Context optimization",
+  "agents.advanced.context_optimization_help":
+    'e.g. { "compaction": true, "prompt_cache": false }',
+  "agents.advanced.outbound_allowlist": "Outbound allowlist",
+  "agents.advanced.outbound_allowlist_help":
+    'Per-channel. e.g. { "whatsapp": ["+57300..."], "telegram": ["@cristian"] }',
+  "agents.advanced.pairing_policy": "Pairing policy",
+  "agents.advanced.pairing_policy_help": 'e.g. { "auto_challenge": true }',
+  "agents.advanced.link_understanding": "Link understanding",
+  "agents.advanced.link_understanding_help":
+    'e.g. { "enabled": true, "max_links_per_turn": 3 }',
+  "agents.advanced.web_search": "Web search",
+  "agents.advanced.web_search_help":
+    'e.g. { "enabled": true, "provider": "tavily" }',
+
+  // Tier 4
+  "agents.advanced.credentials": "Credentials",
+  "agents.advanced.credentials_help":
+    'e.g. { "google": "kate-personal", "whatsapp_outbound": "kate" }',
+  "agents.advanced.google_auth": "Google auth",
+  "agents.advanced.google_auth_help": 'e.g. { "client_id": "..." }',
   "agents.edit.bind_partial_failure":
     "bound, but {agent} failed: {error}",
   "agents.edit.unbind_partial_failure":
@@ -907,6 +1024,60 @@ const en = {
   // ── Plugins (Phase 90.x.plugins — LIVE) ─────────────────
   "plugins.title": "Plugins",
   "plugins.action.reload": "Reload",
+  "plugins.action.install": "Install plugin",
+  "plugins.action.scan": "Scan",
+  "plugins.action.scanning": "Scanning…",
+  "plugins.action.scan_title":
+    "Re-discover plugins on disk and hot-spawn newly-found ones without restarting the daemon.",
+  "plugins.scan.heading":
+    "Scan complete: {spawned} plugins activated, {stale} stale.",
+  "plugins.scan.spawned": "Activated: {ids}",
+  "plugins.scan.stale":
+    "Stale (registered in runtime but no longer on disk): {ids}",
+  "plugins.scan.warnings_summary": "{count} warnings during scan",
+  "plugins.scan.error": "Scan error: {error}",
+  "plugins.install.title": "Install plugin",
+  "plugins.install.subtitle":
+    "Install a plugin by downloading the prebuilt binary from GitHub Releases, or by compiling with cargo install (requires rustc).",
+  "plugins.install.source_label": "Source",
+  "plugins.install.source_release": "Prebuilt release (recommended)",
+  "plugins.install.source_release_hint":
+    "Downloads a prebuilt binary matching your system from GitHub Releases. Zero toolchain dependencies, ~5 seconds.",
+  "plugins.install.source_cargo": "cargo install (compile locally)",
+  "plugins.install.source_cargo_hint":
+    "Compiles from source with rustc. Takes minutes. Only if Rust toolchain is installed.",
+  "plugins.install.crate_name": "Crate name",
+  "plugins.install.crate_name_invalid":
+    "Lowercase letters, digits, hyphens and underscores only.",
+  "plugins.install.version": "Version",
+  "plugins.install.version_invalid":
+    "Letters, digits, dots, +, - only.",
+  "plugins.install.version_required_release":
+    "Release source requires an explicit version (no 'latest' resolution).",
+  "plugins.install.repo": "GitHub repo",
+  "plugins.install.repo_invalid":
+    "Must be <org>/<name>, alphanumerics and - _ . only.",
+  "plugins.install.repo_hint":
+    "Defaults to lordmacu/<crate_name>. Change for forks.",
+  "plugins.install.force": "Force reinstall",
+  "plugins.install.force_cargo_hint":
+    "Passes --force to cargo install so an existing version is overwritten.",
+  "plugins.install.force_release_hint":
+    "Replaces the on-disk binary even when sha256 matches.",
+  "plugins.install.cancel": "Cancel",
+  "plugins.install.submit": "Install",
+  "plugins.install.installing": "Installing…",
+  "plugins.install.success_heading":
+    "✓ {crate} v{version} installed",
+  "plugins.install.success_restart_required":
+    "Plugin installed and hot-spawned. Live without daemon restart.",
+  "plugins.install.success_spawned":
+    "Activated plugins: {ids}",
+  "plugins.install.success_warnings":
+    "Hot-spawn warnings: {warnings}",
+  "plugins.install.cargo_stdout": "cargo stdout",
+  "plugins.install.cargo_stderr": "cargo stderr",
+  "plugins.install.done": "Done",
   "plugins.generated_at": "Snapshot {ts}",
   "plugins.summary.loaded": "Loaded",
   "plugins.summary.scanned": "Scanned",
@@ -916,6 +1087,17 @@ const en = {
   "plugins.loaded.empty": "No plugins loaded.",
   "plugins.diagnostics.title": "Diagnostics",
   "plugins.empty.body": "No plugins installed. Drop manifests into the configured discovery paths and restart the daemon.",
+
+  // Phase 98.12 — WordPress-style tabs + Available catalogue.
+  "plugins.tabs.aria_label": "Plugins view tabs",
+  "plugins.tabs.installed": "Installed",
+  "plugins.tabs.available": "Available",
+  "plugins.available.loading": "Loading public catalogue…",
+  "plugins.available.empty":
+    "No plugins available from public sources right now. Try refreshing the index, or check that GITHUB_TOKEN is set if you've hit the unauth rate limit.",
+  "plugins.available.error": "Failed to load catalogue: {error}",
+  "plugins.available.placeholder_count":
+    "{count} plugins discovered (Phase 98.13 will render rich cards with badges)",
 
   // Phase 81.21.b.b follow-up — manual plugin restart modal.
   "plugins.restart.title": "Restart plugin",

@@ -131,9 +131,29 @@ async fn spawn_http_and_run_stdio() -> nexo_microapp_sdk::Result<()> {
     let (admin_tx, admin_rx) =
         tokio::sync::oneshot::channel::<Arc<nexo_microapp_sdk::admin::AdminClient>>();
 
+    // Phase chat-takeover — clone the live operator token hash
+    // into the on_admin_ready closure so the AdminClient can
+    // stamp it on every OPERATOR_STAMPED_METHODS call
+    // (`processing/pause`, `…/resume`, `…/intervention`,
+    // `escalations/resolve`). Without this stamp the daemon
+    // rejects with `invalid_params: missing field
+    // operator_token_hash` and the chat UI's send/pause/resume
+    // controls error out for the operator.
+    let operator_hash_for_admin = live_token_state.clone();
+
     let mut app = Microapp::new(APP_NAME, env!("CARGO_PKG_VERSION"))
         .with_admin()
         .on_admin_ready(move |admin| {
+            // Wire the SDK's transparent stamp source so every
+            // outbound admin call against an operator-stamped
+            // method carries the current hash. Cheap to load
+            // each time (Arc clone + ArcSwap deref) so rotation
+            // takes effect on the next call without a restart.
+            if let Some(state) = operator_hash_for_admin.clone() {
+                admin.set_operator_token_hash(move || {
+                    state.operator_token_hash.load_full().as_ref().clone()
+                });
+            }
             // Hand the live AdminClient to whoever is awaiting
             // `admin_rx`. Drop on send error — the HTTP task
             // shut down before admin came up.

@@ -67,6 +67,9 @@ interface BindingSummary {
 }
 
 import { HeartbeatField, type HeartbeatWire } from "./heartbeat";
+import AgentAdvancedFields, {
+  type AdvancedPatch,
+} from "./AgentAdvancedFields";
 import { Button, Code, Select, Spinner, Textarea } from "../../components/ui";
 import { useT } from "../../i18n";
 
@@ -82,6 +85,11 @@ interface AgentDetail {
    *  block was never authored; the UI then surfaces the framework
    *  default (disabled, 5m). `Some(..)` = explicit operator config. */
   heartbeat?: HeartbeatWire;
+  /** Phase 97.UI — entire agent yaml block as JSON. Powers the
+   *  advanced-fields accordion (config_tool, team, repl, proactive,
+   *  rate limits, remote_triggers, …). Empty object when the
+   *  daemon couldn't slurp the block (legacy patcher). */
+  raw_config?: Record<string, unknown>;
 }
 
 export default function Agents() {
@@ -97,6 +105,16 @@ export default function Agents() {
   const [confirm_delete, setConfirmDelete] = useState<string | null>(null);
   const [delete_busy, setDeleteBusy] = useState(false);
   const [delete_error, setDeleteError] = useState<string | null>(null);
+  // Phase 97 — inline toggle. Tracks the row currently flipping so
+  // the switch disables itself + shows a subtle opacity hint. Error
+  // surfaces in `toggle_error` as `<agent_id>: <msg>` so the
+  // operator sees which row failed when toggling several quickly.
+  const [toggle_busy, setToggleBusy] = useState<string | null>(null);
+  const [toggle_error, setToggleError] = useState<string | null>(null);
+  // Phase 97.UI — patch buffer for advanced capability gates
+  // (tenant_id, plugins, config_tool, team, repl, ...). The
+  // accordion writes here; save() folds into the upsert payload.
+  const [advanced_patch, setAdvancedPatch] = useState<AdvancedPatch>({});
   const [llm_instances, setLlmInstances] = useState<LlmProviderInstance[]>([]);
   const [llm_create_open, setLlmCreateOpen] = useState(false);
   // Phase 82.10.u — when set, the create modal opens in "rotate
@@ -342,6 +360,10 @@ export default function Agents() {
       });
       setEditing(detail);
       setDraft(detail);
+      // Phase 97.UI — reset the advanced-fields patch buffer on
+      // every modal open so a prior agent's pending edits don't
+      // leak into this one.
+      setAdvancedPatch({});
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
     }
@@ -459,11 +481,57 @@ export default function Agents() {
     console.info(`[agents] ${msg}`);
   }
 
+  // Phase 97 — inline enable/disable handler. Partial upsert: we
+  // send empty strings for model.provider/model so daemon-side
+  // `upsert_yaml` skips writing them (it gates on
+  // `!is_empty()`), and only `active` lands on disk. The reload
+  // signal fires from inside agents/upsert → `ConfigReloadCoordinator`
+  // hot-spawns (active=true) or hot-removes (active=false) the
+  // runtime without restarting the daemon.
+  async function toggleActive(id: string, next_active: boolean) {
+    setToggleBusy(id);
+    setToggleError(null);
+    // Optimistic update so the switch flips immediately.
+    setAgents((prev) =>
+      prev
+        ? prev.map((a) => (a.id === id ? { ...a, active: next_active } : a))
+        : prev,
+    );
+    try {
+      await adminCall("nexo/admin/agents/upsert", {
+        id,
+        model: { provider: "", model: "" },
+        active: next_active,
+      });
+      tracing_info(
+        `toggled ${id} → ${next_active ? "enabled" : "disabled"} via /m/agents`,
+      );
+      await reload();
+    } catch (e) {
+      // Roll back optimistic update on failure so the UI matches
+      // what the daemon actually persisted.
+      setAgents((prev) =>
+        prev
+          ? prev.map((a) => (a.id === id ? { ...a, active: !next_active } : a))
+          : prev,
+      );
+      const msg = e instanceof Error ? e.message : String(e);
+      setToggleError(`${id}: ${msg}`);
+    } finally {
+      setToggleBusy(null);
+    }
+  }
+
   async function save() {
     if (!draft) return;
     setSaveBusy(true);
     setSaveError(null);
     try {
+      // Phase 97.UI — fold the advanced accordion patch alongside
+      // the core fields. Each entry in `advanced_patch` is already
+      // shaped as the daemon's `AgentUpsertInput` field — strings,
+      // string vecs, or opaque JSON values. Missing keys preserve
+      // the existing yaml block; explicit `null` clears.
       await adminCall("nexo/admin/agents/upsert", {
         id: draft.id,
         model: draft.model,
@@ -476,9 +544,13 @@ export default function Agents() {
         // makes the daemon skip the write entirely (preserves
         // the existing yaml block).
         heartbeat: draft.heartbeat,
+        // Tier 1 + 2 + 3 + 4 capability gates from the accordion.
+        // Spread so the typed core fields above stay authoritative.
+        ...advanced_patch,
       });
       setEditing(null);
       setDraft(null);
+      setAdvancedPatch({});
       await reload();
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e));
@@ -604,6 +676,19 @@ export default function Agents() {
             {list_error}
           </div>
         )}
+        {toggle_error && (
+          <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-900 mb-4 flex items-center justify-between gap-3">
+            <span>{t("agents.toggle.error", { error: toggle_error })}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setToggleError(null)}
+              title="dismiss"
+            >
+              <X size={14} />
+            </Button>
+          </div>
+        )}
         {agents === null ? (
           <div className="text-text-meta text-sm flex items-center gap-2">
             <Spinner size="md" /> {t("common.loading")}
@@ -617,10 +702,41 @@ export default function Agents() {
             {agents.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between px-4 py-3"
+                className={`flex items-center justify-between px-4 py-3 ${
+                  a.active ? "" : "opacity-60"
+                }`}
               >
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-text-primary flex items-center gap-2">
+                    {/* Phase 97 — inline enable/disable switch.
+                        Daemon-side hot-spawn/hot-remove fires off
+                        `agents/upsert { active }`; no restart. */}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={a.active}
+                      aria-label={
+                        a.active
+                          ? t("agents.toggle.disable_title")
+                          : t("agents.toggle.enable_title")
+                      }
+                      title={
+                        a.active
+                          ? t("agents.toggle.disable_title")
+                          : t("agents.toggle.enable_title")
+                      }
+                      disabled={toggle_busy === a.id}
+                      onClick={() => void toggleActive(a.id, !a.active)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+                        a.active ? "bg-accent" : "bg-border-DEFAULT"
+                      } ${toggle_busy === a.id ? "opacity-50 cursor-wait" : ""}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                          a.active ? "translate-x-4" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
                     <span className="font-mono">{a.id}</span>
                     {!a.active && (
                       <span className="text-xs text-text-meta px-1.5 py-0.5 rounded bg-panel-alt">
@@ -1189,6 +1305,18 @@ export default function Agents() {
                   </>
                 );
               })()}
+              {/* Phase 97.UI — accordion with the long-tail capability
+                  gates: tenant_id, plugins, allowed_delegates,
+                  config_tool, team, repl, proactive, lsp,
+                  dispatch_policy, rate limits, remote_triggers,
+                  workspace_git, outbound_allowlist, credentials… */}
+              <AgentAdvancedFields
+                rawConfig={
+                  (draft.raw_config as Record<string, unknown> | undefined) ?? {}
+                }
+                patch={advanced_patch}
+                onPatch={setAdvancedPatch}
+              />
               {save_error && (
                 <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800">
                   {save_error}
@@ -1203,6 +1331,7 @@ export default function Agents() {
                   setEditing(null);
                   setDraft(null);
                   setSaveError(null);
+                  setAdvancedPatch({});
                 }}
               >
                 {t("common.cancel")}

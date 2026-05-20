@@ -20,6 +20,7 @@ use axum::{Json, Router};
 use nexo_microapp_sdk::admin::AdminClient;
 use nexo_microapp_sdk::wizard::{probe, ProbeRequest};
 use nexo_tool_meta::admin::agents::{AgentDetail, AgentUpsertInput};
+use nexo_tool_meta::admin::llm_providers::{LlmProvidersListFilter, LlmProvidersListResponse};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -179,6 +180,48 @@ async fn post_agent_save(
     State(s): State<Arc<OnboardingState>>,
     Json(req): Json<AgentSaveRequest>,
 ) -> Response {
+    // Validate the requested model_provider against the live
+    // catalog BEFORE writing agents.yaml. Without this, a stale
+    // wizard draft (or a typo in a future API caller) lands an
+    // agent block whose provider doesn't exist in llm.yaml; the
+    // daemon's config_reload rejects the WHOLE snapshot with
+    // `unknown LLM provider`, no agent ever runs, and any inbound
+    // on the bound channel times out. Surface a structured 400
+    // here so the wizard renders a clear "configure provider first"
+    // message instead.
+    match s
+        .admin
+        .call::<LlmProvidersListFilter, LlmProvidersListResponse>(
+            "nexo/admin/llm_providers/list",
+            LlmProvidersListFilter::default(),
+        )
+        .await
+    {
+        Ok(resp) => {
+            let known: Vec<String> = resp.providers.iter().map(|p| p.id.clone()).collect();
+            if !known.iter().any(|id| id == &req.model_provider) {
+                return Json(json!({
+                    "ok": false,
+                    "error": {
+                        "code": "invalid_params",
+                        "message": format!(
+                            "LLM provider `{}` is not configured yet (known: {}). \
+                             Configure it in the LLM step before creating an agent.",
+                            req.model_provider,
+                            if known.is_empty() {
+                                "<none>".to_string()
+                            } else {
+                                known.join(", ")
+                            }
+                        ),
+                    },
+                }))
+                .into_response();
+            }
+        }
+        Err(e) => return admin_error_to_response(e),
+    }
+
     let resolved_instance = match req.instance.clone() {
         Some(v) => Some(v),
         None => resolve_default_instance(&s, &req.channel).await,

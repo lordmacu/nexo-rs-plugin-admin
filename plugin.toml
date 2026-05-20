@@ -86,6 +86,11 @@ optional = [
     "agent_events_subscribe_all",
     # Phase 82.10.n — channel credential persistence.
     "credentials_crud",
+    # Phase 97.1 — runtime plugin install / scan / uninstall.
+    # Optional because in-tree daemons / minimal embeddings can
+    # skip the plugin lifecycle controls and the UI just hides
+    # the "Install plugin" button without the grant.
+    "plugin_install",
 ]
 
 [plugin.meta]

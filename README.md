@@ -57,7 +57,9 @@ The operator must grant these in `extensions.yaml.admin.capabilities_grant`:
 - `audit_read`, `memory_query`, `memory_snapshot`
 - `plugin_doctor`, `tenants_crud`
 
-Optional (degrade gracefully when missing): `auth_rotate`, `secrets_write`, `agent_events_subscribe_all`, `credentials_crud`.
+Optional (degrade gracefully when missing): `auth_rotate`, `secrets_write`, `agent_events_subscribe_all`, `credentials_crud`, `plugin_install`, `plugin_restart`, `plugin_admin_ui`.
+
+The last three drive the plugin-management surfaces: `plugin_install` (Install/Scan/Uninstall), `plugin_restart` (manual restart), `plugin_admin_ui` (Settings › Plugins screen, Phase 99). The operator grant is the union of `required` + `optional` from this manifest, so a fresh setup grants them automatically; revoke any line to hide that surface.
 
 ## Development
 

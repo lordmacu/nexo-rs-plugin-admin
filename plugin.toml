@@ -91,6 +91,13 @@ optional = [
     # skip the plugin lifecycle controls and the UI just hides
     # the "Install plugin" button without the grant.
     "plugin_install",
+    # Phase 81.21.b.b — manual plugin restart RPC. Optional; the
+    # restart button hides without the grant.
+    "plugin_restart",
+    # Phase 99 — plugin admin-UI contribution model. Optional; the
+    # Settings › Plugins screen is capability-graceful and simply
+    # shows nothing when not granted.
+    "plugin_admin_ui",
 ]
 
 [plugin.meta]

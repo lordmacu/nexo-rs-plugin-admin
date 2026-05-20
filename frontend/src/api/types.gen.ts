@@ -24,6 +24,38 @@ export type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
+// ─── ActionView.ts ────────────────────────────────────
+
+/**
+ * A screen button.
+ */
+export type ActionView = { 
+/**
+ * Action id (`save` overrides the implicit save).
+ */
+id: string, 
+/**
+ * Button label, locale-resolved.
+ */
+label: string, 
+/**
+ * Admin RPC method dispatched on click (under `nexo/admin/`).
+ */
+method: string, 
+/**
+ * Optional confirmation copy shown before dispatch.
+ */
+confirm?: string | null, 
+/**
+ * Optional inputs collected before dispatch.
+ */
+prompt_fields?: Array<FieldDescriptor>, 
+/**
+ * Result-rendering mode — mirrors the manifest `OnSuccess`
+ * serde name (`toast|inline_json|table|redirect|refresh`).
+ */
+on_success: string, };
+
 // ─── AdminAuditResult.ts ────────────────────────────────────
 
 /**
@@ -312,6 +344,27 @@ text: string,
 /**
  * Epoch ms when the daemon received the chunk.
  */
+at_ms: number, } | { "kind": "plugin_ui_changed", 
+/**
+ * What happened.
+ */
+event_kind: PluginUiChangeKind, 
+/**
+ * Affected plugin id.
+ */
+plugin_id: string, 
+/**
+ * Whether the plugin still declares `[plugin.admin_ui]`
+ * after the change (`false` on uninstall / no-admin-ui).
+ */
+admin_ui_present: boolean, 
+/**
+ * Provenance-derived trust tier at emit time.
+ */
+trust_tier: TrustTier, 
+/**
+ * Epoch ms of the change.
+ */
 at_ms: number, };
 
 // ─── AuditTailFilter.ts ────────────────────────────────────
@@ -496,6 +549,118 @@ current: string, } | { "kind": "incompatible",
  */
 reason: string, } | { "kind": "unknown" };
 
+// ─── ConfigFieldError.ts ────────────────────────────────────
+
+/**
+ * One field-validation failure. Mirrors
+ * `nexo_plugin_manifest::config_schema::ConfigSchemaError`
+ * (the daemon maps between them since this crate has no manifest
+ * dependency).
+ */
+export type ConfigFieldError = { 
+/**
+ * JSON Pointer to the offending field (`/port`).
+ */
+pointer: string, 
+/**
+ * Operator-readable explanation.
+ */
+message: string, };
+
+// ─── ConfigSetRequest.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugin_ui/config_set` — the full form
+ * payload (secret fields included; the daemon routes those to the
+ * credential store and strips them from the YAML write).
+ */
+export type ConfigSetRequest = { 
+/**
+ * Target plugin id.
+ */
+plugin: string, 
+/**
+ * Target screen id.
+ */
+screen: string, 
+/**
+ * Submitted field values keyed by field `key`.
+ */
+values: { [key in string]: JsonValue }, };
+
+// ─── ConfigSetResponse.ts ────────────────────────────────────
+
+/**
+ * Reply for `config_set`. On validation failure `ok = false` and
+ * `errors` lists each offending field; nothing is written and no
+ * reload fires.
+ */
+export type ConfigSetResponse = { 
+/**
+ * `true` when the config validated, persisted, and reloaded.
+ */
+ok: boolean, 
+/**
+ * Config-reload version stamped after a successful hot-apply
+ * (Phase 97 `reload_signal`). `None` when validation failed.
+ */
+reload_version?: number | null, 
+/**
+ * Per-field validation failures (empty on success).
+ */
+errors?: Array<ConfigFieldError>, };
+
+// ─── ContributionView.ts ────────────────────────────────────
+
+/**
+ * A menu / sidebar / command-palette entry, labels resolved for
+ * the operator's locale.
+ */
+export type ContributionView = { 
+/**
+ * Contribution id, unique within the plugin.
+ */
+id: string, 
+/**
+ * Target slot for a top-level entry; `None` when nested.
+ */
+slot?: string | null, 
+/**
+ * Parent contribution id when this is a submenu item.
+ */
+parent?: string | null, 
+/**
+ * Display label, resolved for the operator's locale.
+ */
+label: string, 
+/**
+ * Optional `lucide-react` icon name.
+ */
+icon?: string | null, 
+/**
+ * Sort key (lower renders first).
+ */
+order: number, 
+/**
+ * Screen this entry opens. `None` for command-palette actions.
+ */
+screen?: string | null, };
+
+// ─── DescribeRequest.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugin_ui/describe`.
+ */
+export type DescribeRequest = { 
+/**
+ * Target plugin id.
+ */
+plugin: string, 
+/**
+ * Target screen id.
+ */
+screen: string, };
+
 // ─── DiscoveredPlugin.ts ────────────────────────────────────
 
 /**
@@ -633,6 +798,55 @@ envelope_id: string | null,
  * (e.g. fetch payload only when mode is `"tick"`).
  */
 synthesis_mode: string, };
+
+// ─── FieldDescriptor.ts ────────────────────────────────────
+
+/**
+ * One resolved form field. For `secret` fields, `value` is ALWAYS
+ * absent (write-only) and `secret` carries the set/unset status.
+ */
+export type FieldDescriptor = { 
+/**
+ * Config key — maps to a `config_schema` property.
+ */
+key: string, 
+/**
+ * Renderer kind — mirrors the manifest `FieldType` serde name
+ * (`text|number|secret|toggle|select|multiselect|list|link|textarea|json`).
+ */
+field_type: string, 
+/**
+ * Field label, locale-resolved.
+ */
+label: string, 
+/**
+ * Whether the field is required.
+ */
+required: boolean, 
+/**
+ * Optional help text, locale-resolved.
+ */
+help?: string | null, 
+/**
+ * Optional placeholder shown in empty inputs.
+ */
+placeholder?: string | null, 
+/**
+ * Optional `visible_when` expression evaluated client-side.
+ */
+visible_when?: string | null, 
+/**
+ * Resolved choice set (static or RPC-sourced).
+ */
+options?: Array<SelectOptionView> | null, 
+/**
+ * Current value. NEVER set for `secret` fields (write-only).
+ */
+value?: JsonValue | null, 
+/**
+ * Set/unset status — present only for `secret` fields.
+ */
+secret?: SecretStatus | null, };
 
 // ─── InboundKind.ts ────────────────────────────────────
 
@@ -1545,6 +1759,65 @@ export type PluginSource = { "kind": "crates_io" } | { "kind": "github_topic",
  */
 repo: string, } | { "kind": "curated_index" };
 
+// ─── PluginUiChangeKind.ts ────────────────────────────────────
+
+/**
+ * Discriminator for [`AgentEventKind::PluginUiChanged`].
+ */
+export type PluginUiChangeKind = "installed" | "uninstalled" | "enabled" | "disabled" | "config_changed";
+
+// ─── PluginUiEntry.ts ────────────────────────────────────
+
+/**
+ * One plugin's admin-UI contribution set.
+ */
+export type PluginUiEntry = { 
+/**
+ * Plugin id (`google`).
+ */
+id: string, 
+/**
+ * Human-readable plugin name (`Google`).
+ */
+name: string, 
+/**
+ * Provenance-derived trust tier; gates which slots the
+ * plugin's contributions are allowed into (Phase 99.4).
+ */
+trust_tier: TrustTier, 
+/**
+ * Menu / submenu / command-palette entries that survived
+ * trust + `visible_when` gating.
+ */
+contributions: Array<ContributionView>, 
+/**
+ * Screen stubs (id + resolved title) the contributions open.
+ */
+screens: Array<ScreenStub>, 
+/**
+ * Count of contributions dropped by trust-tier gating. The UI
+ * shows a "N hidden by trust tier" banner when non-zero.
+ */
+hidden_count: number, };
+
+// ─── PluginUiListResponse.ts ────────────────────────────────────
+
+/**
+ * Reply for `nexo/admin/plugin_ui/list` — every installed plugin
+ * that contributes admin UI, with its menu structure. `etag`
+ * supports `If-None-Match` so the frontend skips re-rendering the
+ * rail when nothing changed.
+ */
+export type PluginUiListResponse = { 
+/**
+ * Installed plugins that contribute admin UI.
+ */
+plugins: Array<PluginUiEntry>, 
+/**
+ * Aggregate hash of the response body; opaque to the client.
+ */
+etag: string, };
+
 // ─── PluginsCompatCheckParams.ts ────────────────────────────────────
 
 /**
@@ -2121,6 +2394,21 @@ scope_kind: string,
  */
 scope_id: string, };
 
+// ─── RefreshView.ts ────────────────────────────────────
+
+/**
+ * A read-only live widget descriptor.
+ */
+export type RefreshView = { 
+/**
+ * Admin RPC returning the widget payload (under `nexo/admin/`).
+ */
+method: string, 
+/**
+ * Optional auto-poll interval; `None` = manual refresh only.
+ */
+interval_seconds?: number | null, };
+
 // ─── ResolvedBy.ts ────────────────────────────────────
 
 /**
@@ -2186,6 +2474,62 @@ workers_restarted: boolean,
  */
 dry_run: boolean, };
 
+// ─── ScreenDescriptor.ts ────────────────────────────────────
+
+/**
+ * Live screen descriptor the generic renderer consumes. Built by
+ * the daemon (synthesised or forwarded). Field values are current;
+ * dynamic select options are already resolved.
+ */
+export type ScreenDescriptor = { 
+/**
+ * Owning plugin id.
+ */
+plugin: string, 
+/**
+ * Screen id this descriptor renders.
+ */
+screen_id: string, 
+/**
+ * Screen heading, locale-resolved.
+ */
+title: string, 
+/**
+ * Form fields in render order.
+ */
+fields: Array<FieldDescriptor>, 
+/**
+ * Screen buttons.
+ */
+actions?: Array<ActionView>, 
+/**
+ * Optional read-only live widget.
+ */
+refresh?: RefreshView | null, };
+
+// ─── ScreenStub.ts ────────────────────────────────────
+
+/**
+ * Lightweight screen reference (full descriptor fetched lazily
+ * via `describe`).
+ */
+export type ScreenStub = { 
+/**
+ * Screen id, referenced by `ContributionView.screen`.
+ */
+id: string, 
+/**
+ * Screen heading, resolved for the operator's locale.
+ */
+title: string, };
+
+// ─── SecretStatus.ts ────────────────────────────────────
+
+/**
+ * Whether a secret credential is currently stored.
+ */
+export type SecretStatus = "set" | "unset";
+
 // ─── SecurityEventKind.ts ────────────────────────────────────
 
 /**
@@ -2214,6 +2558,21 @@ new_hash: string,
  * `auth::REASON_MAX_LEN` chars by the handler.
  */
 reason?: string | null, };
+
+// ─── SelectOptionView.ts ────────────────────────────────────
+
+/**
+ * One resolved select option.
+ */
+export type SelectOptionView = { 
+/**
+ * Stored value.
+ */
+value: string, 
+/**
+ * Display label, locale-resolved.
+ */
+label: string, };
 
 // ─── SnapshotMetaWire.ts ────────────────────────────────────
 

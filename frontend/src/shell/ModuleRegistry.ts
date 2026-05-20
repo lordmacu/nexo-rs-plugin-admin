@@ -132,6 +132,22 @@ export class ModuleRegistry {
   ): ModuleRegistry {
     return ModuleRegistry.fromGlob(globResult, tenantId);
   }
+
+  /** Phase 99.8 — combine build-time builtin modules with runtime
+   *  plugin-contributed entries (Phase 99 admin UI). Builtins WIN
+   *  on id collision so a plugin can never shadow a core module.
+   *  Returns a fresh registry; callers re-read after the plugin
+   *  contributions store updates (firehose `plugin_ui_changed`). */
+  static merge(
+    builtins: ModuleRegistry,
+    extra: readonly ModuleEntry[],
+  ): ModuleRegistry {
+    const combined = new Map<string, ModuleEntry>();
+    for (const e of extra) combined.set(e.manifest.id, e);
+    // Overlay builtins last → core modules win any id collision.
+    for (const [id, e] of builtins.entries) combined.set(id, e);
+    return new ModuleRegistry(combined);
+  }
 }
 
 // ── Migration runner ────────────────────────────────────────────

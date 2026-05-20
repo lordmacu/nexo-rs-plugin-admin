@@ -1101,6 +1101,7 @@ const en = {
 
   // Phase 98.13 — catalogue card.
   "plugins.card.install": "Install",
+  "plugins.card.installed": "Installed",
   "plugins.card.install_disabled_tooltip":
     "Plugin pinned to an SDK / daemon version line incompatible with the running daemon.",
   "plugins.card.copy_cmd": "Copy cmd",

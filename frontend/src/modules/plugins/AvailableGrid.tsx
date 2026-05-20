@@ -16,9 +16,17 @@ import PluginsSearchBar from "./PluginsSearchBar";
 
 interface AvailableGridProps {
   onInstall: (plugin: DiscoveredPlugin) => void;
+  /** Base plugin ids already loaded in the runtime (instance suffixes
+   *  stripped, e.g. `telegram.bot1` → `telegram`). A discovered plugin
+   *  whose `install_params.plugin_id` is in here is shown as installed
+   *  rather than offering a redundant install. */
+  installedBaseIds: Set<string>;
 }
 
-export default function AvailableGrid({ onInstall }: AvailableGridProps) {
+export default function AvailableGrid({
+  onInstall,
+  installedBaseIds,
+}: AvailableGridProps) {
   const t = useT();
   const { data, isLoading, error, partialFailures, reload } =
     useAvailablePlugins();
@@ -31,6 +39,12 @@ export default function AvailableGrid({ onInstall }: AvailableGridProps) {
   }, []);
 
   const items = data?.items ?? [];
+
+  // Map a crate name to its runtime plugin id by stripping the
+  // `nexo-[rs-]plugin-` convention prefix (`nexo-plugin-telegram` →
+  // `telegram`), so a discovered crate matches the live loaded base id.
+  const pluginIdFromCrate = (crate: string): string =>
+    crate.replace(/^nexo-(?:rs-)?plugin-/, "");
 
   return (
     <div className="space-y-3">
@@ -51,7 +65,14 @@ export default function AvailableGrid({ onInstall }: AvailableGridProps) {
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {items.map((p) => (
-            <PluginCard key={p.name} plugin={p} onInstall={onInstall} />
+            <PluginCard
+              key={p.name}
+              plugin={p}
+              onInstall={onInstall}
+              installed={installedBaseIds.has(
+                pluginIdFromCrate(p.install_params.crate_name),
+              )}
+            />
           ))}
         </div>
       )}

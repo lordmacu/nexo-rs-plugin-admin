@@ -1105,6 +1105,7 @@ const es = {
 
   // Phase 98.13 — tarjeta del catálogo.
   "plugins.card.install": "Instalar",
+  "plugins.card.installed": "Instalado",
   "plugins.card.install_disabled_tooltip":
     "El plugin está fijado a una versión de SDK / daemon incompatible con el daemon en ejecución.",
   "plugins.card.copy_cmd": "Copiar cmd",

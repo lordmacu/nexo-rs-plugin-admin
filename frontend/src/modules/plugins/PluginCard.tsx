@@ -32,13 +32,21 @@ interface PluginCardProps {
   /** Raised when the operator clicks the primary Install button.
    *  Parent owns the modal instance + decides what to refresh. */
   onInstall: (plugin: DiscoveredPlugin) => void;
+  /** Already loaded in the runtime (matched by base plugin id, so a
+   *  multi-instance channel like `telegram.bot1` still marks the base
+   *  `telegram` as installed). Disables the redundant Install button. */
+  installed?: boolean;
 }
 
-export default function PluginCard({ plugin, onInstall }: PluginCardProps) {
+export default function PluginCard({
+  plugin,
+  onInstall,
+  installed = false,
+}: PluginCardProps) {
   const t = useT();
   const [copied, setCopied] = useState(false);
 
-  const installDisabled = plugin.compat.kind === "incompatible";
+  const installDisabled = plugin.compat.kind === "incompatible" || installed;
 
   async function copyInstallCmd() {
     try {
@@ -114,13 +122,15 @@ export default function PluginCard({ plugin, onInstall }: PluginCardProps) {
           onClick={() => onInstall(plugin)}
           disabled={installDisabled}
           title={
-            installDisabled
-              ? t("plugins.card.install_disabled_tooltip")
-              : undefined
+            installed
+              ? t("plugins.card.installed")
+              : installDisabled
+                ? t("plugins.card.install_disabled_tooltip")
+                : undefined
           }
         >
           <Download size={14} />
-          {t("plugins.card.install")}
+          {installed ? t("plugins.card.installed") : t("plugins.card.install")}
         </button>
         <button
           type="button"

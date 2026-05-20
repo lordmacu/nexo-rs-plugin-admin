@@ -211,6 +211,11 @@ export default function PluginsMain() {
           />
         ) : (
           <AvailableGrid
+            installedBaseIds={
+              new Set(
+                (report.loaded_ids ?? []).map((id) => id.split(".")[0]),
+              )
+            }
             onInstall={(plugin: DiscoveredPlugin) => {
               setInstallInitialValues({
                 crate_name: plugin.install_params.crate_name,

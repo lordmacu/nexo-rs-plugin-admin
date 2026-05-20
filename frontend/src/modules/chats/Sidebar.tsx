@@ -159,9 +159,7 @@ export default function Sidebar() {
       (a, b) => b.last_message_at - a.last_message_at,
     );
     let scoped = sorted;
-    // Agent filter — operator-driven. Until the agents list
-    // arrives we stay optimistic + show every conversation so
-    // the first paint isn't an empty pane.
+    // Agent filter — operator-driven.
     if (filter_agent_id !== null) {
       scoped = scoped.filter((c) => c.agent_id === filter_agent_id);
     } else if (agents_list.length > 0) {
@@ -171,6 +169,15 @@ export default function Sidebar() {
       // the queue isn't polluted by deleted / renamed agents.
       const known = new Set(agents_list.map((a) => a.id));
       scoped = scoped.filter((c) => known.has(c.agent_id));
+    } else {
+      // No agent selected AND the agents list hasn't arrived yet.
+      // Show NOTHING rather than every agent's conversations — a
+      // transient null `filter_agent_id` (e.g. mid-navigation, or a
+      // nav that dropped the `chats.agent` query) would otherwise
+      // flash other agents' chats, a multi-tenant privacy leak. A
+      // brief empty pane on genuine first paint is the safe trade;
+      // the auto-select effect fills it once agents load.
+      scoped = [];
     }
     if (filter_channel !== null) {
       scoped = scoped.filter((c) => c.channel === filter_channel);

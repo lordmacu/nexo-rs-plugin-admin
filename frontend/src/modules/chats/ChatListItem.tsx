@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { format, isToday, isYesterday } from "date-fns";
 import { es } from "date-fns/locale";
 import clsx from "clsx";
@@ -59,6 +59,7 @@ function formatTime(at_ms: number, yesterdayLabel: string): string {
 export default function ChatListItem({ conv }: { conv: Conversation }) {
   const t = useT();
   const nav = useNavigate();
+  const location = useLocation();
   const active_key = useConversations((s) => s.active_key);
   const set_active = useConversations((s) => s.set_active);
   const dismiss = useConversations((s) => s.dismiss);
@@ -107,7 +108,11 @@ export default function ChatListItem({ conv }: { conv: Conversation }) {
 
   function openConversation() {
     set_active(conv.key);
-    nav(`/chat/${encodeURIComponent(conv.key)}`);
+    // Preserve the current query string (chats.agent + channel/label
+    // filters) through the nav. Without it the agent filter resets to
+    // null for a tick and the sidebar flashes EVERY agent's
+    // conversations (a multi-tenant leak) before the filter re-applies.
+    nav(`/chat/${encodeURIComponent(conv.key)}${location.search}`);
   }
 
   function startRename() {

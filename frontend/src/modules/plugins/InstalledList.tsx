@@ -8,7 +8,16 @@
 // `setRestartTarget` callback (now passed via prop) opens the
 // `RestartPluginModal`.
 
-import { Activity, AlertTriangle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  PowerOff,
+  RotateCcw,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+} from "lucide-react";
 
 import type { PluginDiagnostic, PluginsDoctorResponse } from "../../api/plugin_doctor";
 import { useT } from "../../i18n";
@@ -18,6 +27,26 @@ interface InstalledListProps {
   isLoading: boolean;
   onRequestRestart: (pluginId: string) => void;
   onRequestUninstall: (pluginId: string) => void;
+  /** Toggle a plugin's enabled state. `enabled = false` disables
+   *  (drop handle, keep binary); `true` re-enables (hot-spawn). */
+  onToggleEnabled: (pluginId: string, enabled: boolean) => void;
+}
+
+/** Extract disabled plugin ids from the discovery report's
+ *  diagnostics. The daemon emits `kind: { Disabled: { id } }` for
+ *  every plugin skipped via `discovery.disabled[]`. These don't
+ *  appear in `loaded_ids` (they were never spawned), so we surface
+ *  them in a dedicated section with an OFF toggle to re-enable. */
+function disabledIds(report: { diagnostics?: PluginDiagnostic[] }): string[] {
+  const out: string[] = [];
+  for (const d of report.diagnostics ?? []) {
+    const kind = (d as { kind?: unknown }).kind;
+    if (kind && typeof kind === "object" && "Disabled" in kind) {
+      const inner = (kind as { Disabled?: { id?: unknown } }).Disabled;
+      if (inner && typeof inner.id === "string") out.push(inner.id);
+    }
+  }
+  return out;
 }
 
 export default function InstalledList({
@@ -25,12 +54,14 @@ export default function InstalledList({
   isLoading,
   onRequestRestart,
   onRequestUninstall,
+  onToggleEnabled,
 }: InstalledListProps) {
   const t = useT();
   const report = data?.report ?? {};
   const loadedIds = report.loaded_ids ?? [];
   const initOutcomes = report.init_outcomes ?? {};
   const diagnostics = report.diagnostics ?? [];
+  const disabled = disabledIds(report);
 
   return (
     <div className="space-y-6">
@@ -80,6 +111,14 @@ export default function InstalledList({
                   <InitOutcomeBadge outcome={initOutcomes[id]} />
                   <button
                     type="button"
+                    className="rounded p-1 text-success hover:bg-warning-soft hover:text-warning"
+                    onClick={() => onToggleEnabled(id, false)}
+                    title={t("plugins.toggle.disable")}
+                  >
+                    <ToggleRight size={14} />
+                  </button>
+                  <button
+                    type="button"
                     className="rounded p-1 text-text-meta hover:bg-warning-soft hover:text-warning"
                     onClick={() => onRequestRestart(id)}
                     title={t("plugins.restart.action")}
@@ -100,6 +139,48 @@ export default function InstalledList({
           </ul>
         )}
       </section>
+
+      {/* Disabled plugins — installed on disk but skipped via
+          discovery.disabled[]. Toggle re-enables (hot-spawn). */}
+      {disabled.length > 0 && (
+        <section className="rounded-lg border bg-panel">
+          <header className="flex items-center gap-2 border-b px-4 py-2 text-sm font-bold text-text-primary">
+            <PowerOff size={14} className="text-text-meta" />
+            {t("plugins.disabled.title")} ({disabled.length})
+          </header>
+          <ul className="divide-y">
+            {disabled.map((id) => (
+              <li
+                key={id}
+                className="flex items-center justify-between gap-3 px-4 py-2 text-sm"
+              >
+                <span className="font-mono text-xs text-text-secondary">{id}</span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-panel-alt px-2 py-0.5 text-xs text-text-meta">
+                    {t("plugins.disabled.badge")}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-text-meta hover:bg-success-soft hover:text-success"
+                    onClick={() => onToggleEnabled(id, true)}
+                    title={t("plugins.toggle.enable")}
+                  >
+                    <ToggleLeft size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
+                    onClick={() => onRequestUninstall(id)}
+                    title={t("plugins.uninstall.action")}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Diagnostics */}
       {diagnostics.length > 0 && (

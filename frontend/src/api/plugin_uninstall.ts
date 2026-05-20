@@ -43,3 +43,35 @@ export async function pluginsUninstall(
     params,
   );
 }
+
+// ── set_enabled (Phase 98 follow-up) ─────────────────────────────
+
+export interface PluginsSetEnabledResponse {
+  plugin_id: string;
+  enabled: boolean;
+  /** `true` when discovery.yaml actually changed (idempotent otherwise). */
+  config_changed: boolean;
+  /** Ids hot-spawned on enable. */
+  spawned: string[];
+  /** `true` when the live handle was dropped on disable. */
+  removed: boolean;
+  warnings: string[];
+}
+
+/**
+ * Toggle a plugin's enabled state. Unlike uninstall, the on-disk
+ * binary stays — re-enabling re-spawns with no re-download.
+ *   - `enabled = false` → append to discovery.yaml `disabled[]` +
+ *     hot-remove the live handle.
+ *   - `enabled = true`  → remove from `disabled[]` + hot-spawn.
+ * Persisted in the yaml so it survives a daemon restart.
+ */
+export async function pluginsSetEnabled(
+  plugin_id: string,
+  enabled: boolean,
+): Promise<PluginsSetEnabledResponse> {
+  return adminCall<PluginsSetEnabledResponse>(
+    "nexo/admin/plugins/set_enabled",
+    { plugin_id, enabled },
+  );
+}

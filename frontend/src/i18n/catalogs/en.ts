@@ -1157,6 +1157,12 @@ const en = {
     "Also delete the binary from disk (cargo uninstall) — unchecked keeps it for re-enable without re-download",
   "plugins.uninstall.confirm_prompt": "Type `{prefix}` to confirm.",
 
+  // Phase 98 follow-up — enable/disable toggle.
+  "plugins.toggle.enable": "Enable (re-spawn, keeps binary)",
+  "plugins.toggle.disable": "Disable (stop, keeps binary on disk)",
+  "plugins.disabled.title": "Disabled",
+  "plugins.disabled.badge": "disabled",
+
   // Phase 81.21.b.b follow-up — manual plugin restart modal.
   "plugins.restart.title": "Restart plugin",
   "plugins.restart.action": "Restart",

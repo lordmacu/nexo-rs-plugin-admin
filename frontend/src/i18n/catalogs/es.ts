@@ -1161,6 +1161,12 @@ const es = {
     "Borrar también el binario del disco (cargo uninstall) — sin marcar lo conserva para reactivar sin re-descargar",
   "plugins.uninstall.confirm_prompt": "Escribe `{prefix}` para confirmar.",
 
+  // Phase 98 follow-up — toggle activar/desactivar.
+  "plugins.toggle.enable": "Activar (re-spawn, conserva binario)",
+  "plugins.toggle.disable": "Desactivar (detener, conserva binario en disco)",
+  "plugins.disabled.title": "Desactivados",
+  "plugins.disabled.badge": "desactivado",
+
   // Phase 81.21.b.b follow-up — modal de restart manual.
   "plugins.restart.title": "Reiniciar plugin",
   "plugins.restart.action": "Reiniciar",

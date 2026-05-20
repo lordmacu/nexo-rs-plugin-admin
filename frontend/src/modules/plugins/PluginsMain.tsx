@@ -15,6 +15,7 @@ import { Download, RefreshCw, Search } from "lucide-react";
 import { useAvailablePlugins, usePluginsDoctor } from "../../store/plugins";
 import { adminCall } from "../../api/admin";
 import type { DiscoveredPlugin } from "../../api/plugin_discovery";
+import { pluginsSetEnabled } from "../../api/plugin_uninstall";
 import { useT } from "../../i18n";
 import AvailableGrid from "./AvailableGrid";
 import InstalledList from "./InstalledList";
@@ -194,6 +195,19 @@ export default function PluginsMain() {
             isLoading={isLoading}
             onRequestRestart={setRestartTarget}
             onRequestUninstall={setUninstallTarget}
+            onToggleEnabled={(pluginId, enabled) => {
+              void (async () => {
+                try {
+                  await pluginsSetEnabled(pluginId, enabled);
+                  void reload();
+                } catch {
+                  // Surface via the doctor view's error slice on
+                  // next reload; the toggle is best-effort + the
+                  // operator can retry.
+                  void reload();
+                }
+              })();
+            }}
           />
         ) : (
           <AvailableGrid

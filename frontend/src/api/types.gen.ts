@@ -475,6 +475,119 @@ tenant_id?: string | null,
  */
 language?: string | null, };
 
+// ─── CompatStatus.ts ────────────────────────────────────
+
+/**
+ * SDK semver compat result. Drives the install button's enabled
+ * state on the UI card.
+ */
+export type CompatStatus = { "kind": "compatible" } | { "kind": "needs_upgrade", 
+/**
+ * `semver::VersionReq` display of the required range.
+ */
+required: string, 
+/**
+ * `semver::Version` display of the running daemon's SDK.
+ */
+current: string, } | { "kind": "incompatible", 
+/**
+ * Human-readable explanation surfaced as the badge tooltip
+ * (e.g. "Plugin pins nexo-sdk = 0.0.x; daemon ships 0.1+").
+ */
+reason: string, } | { "kind": "unknown" };
+
+// ─── DiscoveredPlugin.ts ────────────────────────────────────
+
+/**
+ * Single catalogue entry. Merged from one or more sources; UI
+ * renders this as a card.
+ */
+export type DiscoveredPlugin = { 
+/**
+ * Canonical crate name (`nexo-plugin-telegram`). Unique key
+ * across sources — merge-by-name dedups duplicates.
+ */
+name: string, 
+/**
+ * Latest non-yanked semver. `None` when the source doesn't
+ * publish version info (rare; GitHub-topic-only entries
+ * without crates.io publication).
+ */
+version?: string | null, 
+/**
+ * One-line summary. Pulled from crates.io description /
+ * repo description / curated index entry.
+ */
+description?: string | null, 
+/**
+ * GitHub org or crates.io owner login. Drives the
+ * `trust_tier` derivation against `TrustedKeysConfig.authors`.
+ */
+owner: string, 
+/**
+ * Where the daemon found this entry. Multiple sources merge
+ * into one entry with the union of sources here — operators
+ * see "available on crates.io + indexed" badges.
+ */
+sources: Array<PluginSource>, 
+/**
+ * Canonical repo URL (`https://github.com/org/name`). Used as
+ * the fallback `repo` slug when constructing `install_params`
+ * for the Release path.
+ */
+repo_url?: string | null, 
+/**
+ * Plugin homepage / docs URL. Optional; surfaced as a "Learn
+ * more" link on the UI card.
+ */
+homepage?: string | null, 
+/**
+ * Free-form tags from crates.io keywords + curated index
+ * metadata. Drives the search-by-tag filter.
+ */
+tags: Array<string>, 
+/**
+ * Functional category derived from `nexo-plugin.toml` manifest
+ * sections at fetch time. Lets the UI bucket plugins by what
+ * they do (channel / poller / tool / webhook / persona).
+ */
+category: PluginCategory, 
+/**
+ * Trust tier resolved against the daemon's `TrustedKeysConfig`
+ * authors allowlist + curated index membership. Shipped as a
+ * badge on the UI card; never enforced here — installation
+ * still routes through Phase 97.1's signature pipeline.
+ */
+trust_tier: TrustTier, 
+/**
+ * Result of comparing the manifest's `[plugin.requires]
+ * nexo-sdk = ">=…"` range against the running daemon's
+ * `nexo_microapp_sdk::VERSION`. `Unknown` when no manifest
+ * was fetched (404 / parse error / source-only entry).
+ */
+compat: CompatStatus, 
+/**
+ * Raw URL to the plugin's `nexo-plugin.toml` (or fallback
+ * paths). Empty when the source doesn't expose one; UI hides
+ * the "manifest" link when absent.
+ */
+manifest_url?: string | null, 
+/**
+ * Human-readable install command (`cargo install
+ * nexo-plugin-X --version 0.3.0`). Convenient for the
+ * copy-button on the UI card; the actual install is driven
+ * by `install_params` below.
+ */
+install_cmd: string, 
+/**
+ * Pre-filled params for `nexo/admin/plugins/install`. A click
+ * on the UI "Install" button opens the existing
+ * [`crate::admin::plugin_install::PluginsInstallParams`]
+ * modal with these values populated — operator can tweak
+ * trust flags / source before submitting.
+ */
+install_params: PluginsInstallParams, };
+
 // ─── EscalationReason.ts ────────────────────────────────────
 
 /**
@@ -611,6 +724,47 @@ has_media?: boolean,
  * receive). `None` otherwise.
  */
 origin_session_id?: string | null, };
+
+// ─── InstallSource.ts ────────────────────────────────────
+
+/**
+ * Which delivery channel the daemon should use to fetch the
+ * plugin binary. Defaults to [`InstallSource::Release`] — fastest
+ * path for SaaS clients without a Rust toolchain.
+ */
+export type InstallSource = "release" | "cargo";
+
+// ─── ManifestSummary.ts ────────────────────────────────────
+
+/**
+ * Subset of `nexo-plugin.toml` surfaced via
+ * `nexo/admin/plugins/compat_check`. Lets the UI render a
+ * pre-install dialog with manifest details without exposing the
+ * full TOML.
+ */
+export type ManifestSummary = { 
+/**
+ * Manifest's `[plugin] id` field — canonical plugin identifier.
+ */
+plugin_id: string, 
+/**
+ * Manifest's `[plugin] version` field — declared semver.
+ */
+plugin_version: string, 
+/**
+ * `manifest_version` schema discriminator (currently `2`).
+ */
+manifest_version: number, 
+/**
+ * Raw `[plugin.requires] nexo-sdk` value (semver range string),
+ * `None` when not declared.
+ */
+sdk_requires?: string | null, 
+/**
+ * Functional category derived from which manifest sections are
+ * present (same logic that powers `DiscoveredPlugin.category`).
+ */
+category: PluginCategory, };
 
 // ─── McpServerDetail.ts ────────────────────────────────────
 
@@ -1368,6 +1522,62 @@ agents: string,
  */
 present_files?: Array<string>, };
 
+// ─── PluginCategory.ts ────────────────────────────────────
+
+/**
+ * Functional bucket auto-derived from `nexo-plugin.toml` sections
+ * at fetch time. Manifest sections are introspected per Phase
+ * 81.33.b.real auto-discovery design — discovery never asks
+ * authors to tag manually.
+ */
+export type PluginCategory = "channel" | "poller" | "webhook" | "persona" | "tool" | "unknown";
+
+// ─── PluginSource.ts ────────────────────────────────────
+
+/**
+ * Where a `DiscoveredPlugin` was found. A single plugin may
+ * appear in multiple sources; the catalogue merges them so the
+ * operator sees "available on crates.io + indexed" badges.
+ */
+export type PluginSource = { "kind": "crates_io" } | { "kind": "github_topic", 
+/**
+ * `<org>/<name>` slug — used to build the manifest URL.
+ */
+repo: string, } | { "kind": "curated_index" };
+
+// ─── PluginsCompatCheckParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/compat_check`.
+ */
+export type PluginsCompatCheckParams = { 
+/**
+ * crates.io crate name (e.g. `nexo-plugin-telegram`).
+ * Validated against the same `[a-z0-9_-]` char class
+ * `plugin_install` enforces.
+ */
+crate_name: string, 
+/**
+ * Optional pinned version. `None` → latest published.
+ */
+version?: string | null, };
+
+// ─── PluginsCompatCheckResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/compat_check`.
+ */
+export type PluginsCompatCheckResponse = { 
+/**
+ * Compat result against the running daemon's SDK version.
+ */
+compat: CompatStatus, 
+/**
+ * Parsed manifest summary when fetch succeeded. `None` when
+ * the manifest URL returned 404 / parse error.
+ */
+manifest_summary?: ManifestSummary | null, };
+
 // ─── PluginsDoctorResponse.ts ────────────────────────────────────
 
 /**
@@ -1385,6 +1595,175 @@ report: JsonValue,
  * since epoch). Operators see this as a "as of …" hint.
  */
 generated_at_ms: number, };
+
+// ─── PluginsInstallParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/install`.
+ *
+ * Two delivery paths governed by [`InstallSource`]:
+ *   - `Release` (default): download prebuilt binary from GitHub
+ *     releases following cargo-dist URL convention.
+ *   - `Cargo`: shell out to `cargo install <crate>` (compiles
+ *     locally; requires rustc).
+ *
+ * Sealed against arbitrary command injection — the `crate_name` is
+ * validated as a crates.io identifier (`[a-z0-9_-]+`), `version`
+ * against a semver-ish pattern, and `repo` against a `<org>/<name>`
+ * GitHub-slug pattern before any spawn or HTTP request.
+ */
+export type PluginsInstallParams = { 
+/**
+ * crates.io package name (e.g. `nexo-plugin-telegram`).
+ * Rejected if non-empty chars outside `[a-z0-9_-]`.
+ */
+crate_name: string, 
+/**
+ * Optional pinned version. `None` resolves to the latest
+ * published release. Rejected if non-empty chars outside
+ * `[0-9A-Za-z.+-]`. REQUIRED for `source = Release` (we don't
+ * query GitHub's "latest release" endpoint to keep the daemon
+ * hermetic + offline-friendly).
+ */
+version?: string | null, 
+/**
+ * GitHub repo slug (`org/name`) hosting the release artefacts.
+ * REQUIRED for `source = Release`. Ignored for `Cargo`.
+ * Defaults to `lordmacu/<crate_name>` if not supplied — the
+ * convention for first-party Nexo plugins.
+ */
+repo?: string | null, 
+/**
+ * Delivery channel. See [`InstallSource`] docs.
+ */
+source: InstallSource, 
+/**
+ * `force = true` passes `--force` to `cargo install` (Cargo
+ * path) OR overwrites the existing binary (Release path).
+ * Default `false` skips when the version is already current.
+ */
+force: boolean, 
+/**
+ * Phase 98.4 — parity with `nexo plugin install --require-signature`.
+ * When `true` the silent installer escalates `[[authors]]` policy
+ * to `Require` regardless of the TOML setting; an unsigned
+ * release rejects with `PolicyRequiresSig`. Mutually exclusive
+ * with `skip_signature_verify` — the admin handler rejects the
+ * combination with `InvalidParams`. Ignored for
+ * [`InstallSource::Cargo`] (cargo path doesn't expose the
+ * release tarball signature surface; response will carry
+ * `trust_enforcement = "cargo_skipped"`).
+ */
+require_signature: boolean, 
+/**
+ * Phase 98.4 — parity with `nexo plugin install --skip-signature-verify`.
+ * Downgrades policy to `Ignore` regardless of TOML for this
+ * install. Use case: SaaS operator needs to install an unsigned
+ * pre-release plugin from a known dev. Mutually exclusive with
+ * `require_signature` — admin handler rejects the combo.
+ */
+skip_signature_verify: boolean, };
+
+// ─── PluginsInstallResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/install`.
+ */
+export type PluginsInstallResponse = { 
+/**
+ * Echo of the crate the operator asked for.
+ */
+crate_name: string, 
+/**
+ * Version actually installed (parsed from `cargo install`
+ * stdout, or echoed from the `version` param when supplied).
+ * `None` when the install succeeded but the version couldn't
+ * be parsed back.
+ */
+installed_version?: string | null, 
+/**
+ * Plugin ids hot-spawned in the same call (the rescan that
+ * runs after `cargo install` returns). Usually one entry, but
+ * can be empty if the operator already had the binary on disk
+ * and just wanted the daemon to scan, or multiple if a single
+ * crate ships several `nexo-plugin-*` binaries.
+ */
+spawned: Array<string>, 
+/**
+ * Trimmed `cargo install` stdout for operator forensics. Long
+ * outputs are clipped to ~16 KiB so the JSON reply stays sane.
+ */
+cargo_stdout: string, 
+/**
+ * Trimmed `cargo install` stderr — Cargo prints progress here.
+ */
+cargo_stderr: string, 
+/**
+ * Phase 98.4 — discriminator for how trust policy was applied:
+ *   - `"policy_applied"` — Release path; `trusted_keys.toml`
+ *     policy resolved + enforced normally.
+ *   - `"user_require"` — Release path; operator forced
+ *     `require_signature = true` in params.
+ *   - `"user_skip"` — Release path; operator forced
+ *     `skip_signature_verify = true` in params.
+ *   - `"cargo_skipped"` — Cargo source; signature surface
+ *     unavailable so trust enforcement deferred.
+ */
+trust_enforcement: string, 
+/**
+ * Phase 98.4 — Gap 3.1 closed. `true` when cosign verified the
+ * release tarball; `false` for Cargo path or unsigned Release.
+ */
+signature_verified: boolean, 
+/**
+ * Phase 98.4 — SAN extracted from cosign cert (e.g. GitHub
+ * Actions workflow URL). `None` when verification skipped.
+ */
+signature_identity?: string | null, 
+/**
+ * Phase 98.4 — OIDC issuer the cert was minted by. `None` when
+ * verification skipped.
+ */
+signature_issuer?: string | null, 
+/**
+ * Phase 98.4 — effective trust mode that ran for this install
+ * (`"ignore" | "warn" | "require"`). Empty string for Cargo
+ * source.
+ */
+trust_mode: string, 
+/**
+ * Phase 98.4 — `[[authors]]` entry that matched the release
+ * owner (if any). `None` means the owner had no policy entry
+ * and the global default was applied.
+ */
+trust_policy_matched?: string | null, };
+
+// ─── PluginsRefreshIndexParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/refresh_index`. Empty — the
+ * daemon invalidates its disk cache and re-fetches every source.
+ */
+export type PluginsRefreshIndexParams = Record<symbol, never>;
+
+// ─── PluginsRefreshIndexResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/refresh_index`.
+ */
+export type PluginsRefreshIndexResponse = { 
+/**
+ * Number of unique `DiscoveredPlugin` entries after merge.
+ */
+items_count: number, 
+/**
+ * Source names that succeeded.
+ */
+sources_ok: Array<string>, 
+/**
+ * Source names that failed + reasons.
+ */
+sources_err: Array<SourceError>, };
 
 // ─── PluginsRestartParams.ts ────────────────────────────────────
 
@@ -1432,6 +1811,210 @@ restarted_at_ms: number,
  * completing and the install).
  */
 new_pid?: number | null, };
+
+// ─── PluginsScanParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/scan`. Empty for now; the daemon
+ * re-runs its configured discovery walker and reports diffs.
+ */
+export type PluginsScanParams = Record<symbol, never>;
+
+// ─── PluginsScanResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/scan`.
+ */
+export type PluginsScanResponse = { 
+/**
+ * Plugin ids the daemon discovered that were NOT in the live
+ * registry before the scan. Each was hot-spawned and is now
+ * reachable via the dispatcher, pairing trigger registry, and
+ * admin router. Order: discovery walk order.
+ */
+spawned: Array<string>, 
+/**
+ * Plugin ids the daemon found in the live registry that no
+ * longer have a discoverable manifest (binary deleted, search
+ * path removed, etc.). They are NOT auto-uninstalled — the
+ * operator must explicitly call `plugins/uninstall`. This list
+ * is purely informative so the UI can surface "stale" badges.
+ */
+stale: Array<string>, 
+/**
+ * Free-form per-plugin scan diagnostics — manifest validation
+ * failures, duplicate-id collisions, capability denials. Keyed
+ * by plugin id when known, else by manifest file path.
+ */
+warnings: Array<string>, };
+
+// ─── PluginsSearchParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/search`.
+ */
+export type PluginsSearchParams = { 
+/**
+ * Optional substring filter applied client-side post-merge
+ * against `name + description + tags`. `None` → return the
+ * full catalogue (paginated naturally by source caps).
+ */
+query?: string | null, 
+/**
+ * When `true`, drop entries where `compat` is `NeedsUpgrade` /
+ * `Incompatible`. Keeps `Unknown` (manifest fetch failed —
+ * not necessarily incompatible).
+ */
+compat_only: boolean, 
+/**
+ * Optional category filter (`channel`, `poller`, `tool`,
+ * `webhook`, `persona`). `None` → all.
+ */
+category?: string | null, 
+/**
+ * Optional source filter (`crates_io`, `github_topic`,
+ * `curated_index`). `None` → all sources.
+ */
+source?: string | null, };
+
+// ─── PluginsSearchResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/search`.
+ */
+export type PluginsSearchResponse = { 
+/**
+ * Merged + filtered catalogue. Empty when every source is
+ * down or rate-limited — `partial_failures` then carries the
+ * per-source errors.
+ */
+items: Array<DiscoveredPlugin>, 
+/**
+ * Unix milliseconds when the underlying catalogue was last
+ * refreshed (cache hit = older value; cold fetch = "now").
+ * Drives the "Updated <X> ago" footer on the UI.
+ */
+fetched_at_ms: number, 
+/**
+ * One entry per source that failed; healthy sources contribute
+ * to `items` regardless. Empty when every source succeeded.
+ */
+partial_failures: Array<SourceError>, };
+
+// ─── PluginsSetEnabledParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/set_enabled`. Toggles a plugin's
+ * enabled state by editing `plugins/discovery.yaml`'s
+ * `discovery.disabled[]` list + hot-removing (disable) or
+ * hot-spawning (enable) the live handle. Unlike `uninstall`, the
+ * on-disk binary is never deleted — re-enabling re-spawns it with
+ * no re-download.
+ */
+export type PluginsSetEnabledParams = { 
+/**
+ * Plugin id from the manifest's `[plugin] id`.
+ */
+plugin_id: string, 
+/**
+ * `true` → enable (remove from `disabled[]` + hot-spawn).
+ * `false` → disable (append to `disabled[]` + hot-remove).
+ */
+enabled: boolean, };
+
+// ─── PluginsSetEnabledResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/set_enabled`.
+ */
+export type PluginsSetEnabledResponse = { 
+/**
+ * Echo of the plugin id.
+ */
+plugin_id: string, 
+/**
+ * Echo of the requested enabled state.
+ */
+enabled: boolean, 
+/**
+ * `true` when `discovery.yaml` actually changed. `false` when
+ * the plugin was already in the requested state (idempotent).
+ */
+config_changed: boolean, 
+/**
+ * On enable: plugin ids hot-spawned (usually one). Empty on
+ * disable.
+ */
+spawned: Array<string>, 
+/**
+ * On disable: `true` when the live handle was dropped. `false`
+ * on enable or when no handle existed.
+ */
+removed: boolean, 
+/**
+ * Free-form per-plugin diagnostics from the spawn/remove cycle
+ * (init failures, register errors). Empty on the happy path.
+ */
+warnings: Array<string>, };
+
+// ─── PluginsUninstallParams.ts ────────────────────────────────────
+
+/**
+ * Params for `nexo/admin/plugins/uninstall`.
+ */
+export type PluginsUninstallParams = { 
+/**
+ * Plugin id from the manifest's `[plugin] id`. The daemon
+ * stops the subprocess, drops the handle from the live
+ * registry, and (when `cargo_uninstall = true`) shells out to
+ * `cargo uninstall <crate_name>` so the binary leaves disk.
+ */
+plugin_id: string, 
+/**
+ * When `true`, also runs `cargo uninstall <crate_name>` where
+ * `crate_name` is derived from the plugin's manifest
+ * `[plugin.cargo].crate_name` field, or the operator's
+ * override. `false` (default) keeps the binary on disk so the
+ * operator can re-enable later without a fresh download.
+ */
+cargo_uninstall: boolean, 
+/**
+ * Optional explicit crate name when the manifest doesn't
+ * declare `[plugin.cargo].crate_name`. Ignored when
+ * `cargo_uninstall = false`.
+ */
+crate_name?: string | null, };
+
+// ─── PluginsUninstallResponse.ts ────────────────────────────────────
+
+/**
+ * Response for `nexo/admin/plugins/uninstall`.
+ */
+export type PluginsUninstallResponse = { 
+/**
+ * Echo of the plugin id.
+ */
+plugin_id: string, 
+/**
+ * `true` when the plugin was stopped and dropped from the
+ * registry. `false` when no such plugin existed (idempotent).
+ */
+removed: boolean, 
+/**
+ * `true` when `cargo uninstall` also ran successfully. `false`
+ * when not requested OR when cargo uninstall failed (the
+ * in-process removal still succeeded; the operator gets a
+ * warning in `cargo_stderr`).
+ */
+cargo_uninstalled: boolean, 
+/**
+ * Trimmed cargo stdout when `cargo_uninstall = true`.
+ */
+cargo_stdout?: string, 
+/**
+ * Trimmed cargo stderr when `cargo_uninstall = true`.
+ */
+cargo_stderr?: string, };
 
 // ─── ProcessingControlState.ts ────────────────────────────────────
 
@@ -1685,6 +2268,25 @@ encrypted: boolean,
  */
 redactions_applied: boolean, };
 
+// ─── SourceError.ts ────────────────────────────────────
+
+/**
+ * Per-source failure surfaced to the UI's
+ * `<PartialFailureBanner>`. `search` returns whatever items the
+ * healthy sources produced + this list of failures, so a
+ * rate-limited GitHub doesn't blank the page.
+ */
+export type SourceError = { 
+/**
+ * Source name (`crates_io`, `github_topic`, `curated_index`).
+ */
+source: string, 
+/**
+ * Human-readable failure reason. Already escaped for label
+ * rendering; ≤ 256 chars.
+ */
+message: string, };
+
 // ─── TranscriptRole.ts ────────────────────────────────────
 
 /**
@@ -1693,6 +2295,15 @@ redactions_applied: boolean, };
  * `nexo_core::agent::transcripts::TranscriptRole`.
  */
 export type TranscriptRole = "user" | "assistant" | "tool" | "system";
+
+// ─── TrustTier.ts ────────────────────────────────────
+
+/**
+ * Operator-facing trust signal derived from owner allowlist +
+ * curated index membership. Never enforced here — install
+ * continues to route through Phase 97.1 signature verification.
+ */
+export type TrustTier = "official" | "community_indexed" | "unverified";
 
 // ─── WebhookEnvelope.ts ────────────────────────────────────
 

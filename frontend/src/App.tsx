@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -24,8 +24,6 @@ import { ModuleRegistry } from "./shell/ModuleRegistry";
 import { useTenant } from "./shell/useTenant";
 import { useRegistry } from "./shell/registryInstance";
 import { usePluginContributions } from "./store/pluginContributions";
-import { pluginEntriesToModules } from "./shell/pluginContributionModules";
-import { PluginModulePage } from "./shell/PluginModulePage";
 import { Button } from "./components/ui";
 import { useT } from "./i18n";
 
@@ -80,36 +78,17 @@ export default function App() {
 function ShellMount() {
   const { activeTenantId } = useTenant();
   const tenantId = activeTenantId ?? "__pending__";
-  const builtin = useMemoizedRegistry(filteredGlob, tenantId);
-  const pluginEntries = usePluginContributions((s) => s.entries);
+  const registry = useMemoizedRegistry(filteredGlob, tenantId);
 
-  // Phase 99 — fetch plugin contributions + subscribe to the
-  // firehose so the rail reacts to install / uninstall / config
-  // changes (`plugin_ui_changed`). Capability-graceful: a missing
-  // `plugin_admin_ui` grant degrades to an empty set.
+  // Phase 99 — plugin admin-UI contributions are surfaced UNDER the
+  // Settings module (a "Plugins" sub-link), not as top-level rail
+  // entries. Boot the fetch + firehose subscription here so the
+  // Settings > Plugins page is populated on first open + reacts to
+  // install / uninstall / config (`plugin_ui_changed`). Capability-
+  // graceful: a missing `plugin_admin_ui` grant degrades to empty.
   useEffect(() => {
     return usePluginContributions.getState().subscribe();
   }, []);
-
-  // Merge runtime plugin modules into the builtin registry,
-  // recomputing whenever the contributions change.
-  const registry = useMemo(
-    () =>
-      ModuleRegistry.merge(
-        builtin,
-        pluginEntriesToModules(pluginEntries, (entry) => (
-          <PluginModulePage entry={entry} />
-        )),
-      ),
-    [builtin, pluginEntries],
-  );
-
-  // Publish the MERGED registry to the global singleton (Cmd+K
-  // reads it outside the shell tree).
-  useEffect(() => {
-    useRegistry.getState().setRegistry(registry);
-    return () => useRegistry.getState().setRegistry(null);
-  }, [registry]);
 
   return (
     <Routes>
@@ -161,10 +140,14 @@ function emitRoute(
 
 function useMemoizedRegistry(glob: Record<string, unknown>, tenantId: string) {
   // Lightweight memo — `glob` is a build-time constant, so the
-  // builtin registry only rebuilds when `tenantId` changes.
-  // Publishing to the global singleton now happens in `ShellMount`
-  // against the MERGED registry (builtin + plugin contributions).
+  // registry only rebuilds when `tenantId` changes.
   const [registry] = useState(() => ModuleRegistry.fromGlob(glob, tenantId));
+  // Publish to the global singleton so the Cmd+K palette
+  // (mounted outside the shell tree) reads the same instance.
+  useEffect(() => {
+    useRegistry.getState().setRegistry(registry);
+    return () => useRegistry.getState().setRegistry(null);
+  }, [registry]);
   return registry;
   // NOTE: switching tenant remounts <ShellMount> via the
   // RequireAuth gate keying off auth state in M16.3 follow-up;

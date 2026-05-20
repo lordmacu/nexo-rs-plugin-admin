@@ -4,7 +4,8 @@
 //     system info — those land when the matching admin RPCs do.
 
 import { useState } from "react";
-import { Key, ShieldAlert } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Key, ShieldAlert, Puzzle, ChevronRight } from "lucide-react";
 
 import { rotateAuthToken } from "../../api/settings";
 import { useT } from "../../i18n";
@@ -43,6 +44,23 @@ export default function SettingsMain() {
         </h1>
       </header>
       <div className="flex-1 overflow-y-auto p-6">
+        {/* Phase 99 — Plugins sub-link */}
+        <Link
+          to="plugins"
+          className="mb-6 flex items-center gap-2 rounded-lg border bg-panel p-4 hover:border-accent"
+        >
+          <Puzzle size={16} className="text-text-secondary" />
+          <div className="flex-1">
+            <h2 className="text-sm font-bold text-text-primary">
+              {t("settings.plugins.nav")}
+            </h2>
+            <p className="text-xs text-text-secondary">
+              {t("settings.plugins.subtitle")}
+            </p>
+          </div>
+          <ChevronRight size={16} className="text-text-secondary" />
+        </Link>
+
         {/* Auth rotate panel */}
         <section className="mb-6 rounded-lg border bg-panel p-4">
           <div className="mb-2 flex items-center gap-2 text-text-primary">

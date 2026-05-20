@@ -7,6 +7,7 @@ import { Settings } from "lucide-react";
 import type { ModuleManifest } from "../../shell/types";
 import { t as tStatic } from "../../i18n";
 import SettingsMain from "./SettingsMain";
+import PluginsSettings, { PluginScreenRoute } from "./PluginsSettings";
 
 export const manifest: ModuleManifest = {
   id: "settings",
@@ -17,6 +18,11 @@ export const manifest: ModuleManifest = {
     tooltip: tStatic("settings.title"),
     order: 90,
   },
-  routes: [{ path: "", element: <SettingsMain /> }],
+  routes: [
+    { path: "", element: <SettingsMain /> },
+    // Phase 99 — "Plugins" sub-link inside Configuración.
+    { path: "plugins", element: <PluginsSettings /> },
+    { path: "plugins/:pluginId", element: <PluginScreenRoute /> },
+  ],
   capabilities: { tenantSwitch: false },
 };

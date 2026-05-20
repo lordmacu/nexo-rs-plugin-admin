@@ -1174,6 +1174,15 @@ const en = {
 
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Settings",
+  // Phase 99 — plugin admin-UI sub-link under Settings.
+  "settings.plugins.nav": "Plugins",
+  "settings.plugins.title": "Plugins",
+  "settings.plugins.subtitle": "Configure installed plugins that contribute admin UI.",
+  "settings.plugins.empty": "No installed plugin contributes admin UI yet.",
+  "settings.plugins.denied": "You don't have permission to manage plugins.",
+  "settings.plugins.back": "Back to plugins",
+  "settings.plugins.no_screens": "This plugin contributes no screens.",
+  "settings.plugins.open": "Open",
   "settings.auth.title": "Operator token",
   "settings.auth.subtitle": "Rotate the admin RPC bearer. Active sessions invalidate; operators must re-login.",
   "settings.auth.action.rotate": "Rotate token",

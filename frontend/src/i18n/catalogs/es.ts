@@ -1178,6 +1178,15 @@ const es = {
 
   // ── Settings (Phase 90.3.20) ─────────────────────────────
   "settings.title": "Configuración",
+  // Phase 99 — sublink de plugins dentro de Configuración.
+  "settings.plugins.nav": "Plugins",
+  "settings.plugins.title": "Plugins",
+  "settings.plugins.subtitle": "Configura los plugins instalados que aportan UI de administración.",
+  "settings.plugins.empty": "Ningún plugin instalado aporta UI de administración todavía.",
+  "settings.plugins.denied": "No tienes permiso para gestionar plugins.",
+  "settings.plugins.back": "Volver a plugins",
+  "settings.plugins.no_screens": "Este plugin no aporta pantallas.",
+  "settings.plugins.open": "Abrir",
   "settings.auth.title": "Token de operador",
   "settings.auth.subtitle": "Rota el bearer del admin RPC. Las sesiones activas se invalidan; los operadores deberán volver a iniciar sesión.",
   "settings.auth.action.rotate": "Rotar token",

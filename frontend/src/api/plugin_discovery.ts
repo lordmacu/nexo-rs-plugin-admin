@@ -78,10 +78,13 @@ export interface DiscoveredPlugin {
 // ── request / response shapes ────────────────────────────────────
 
 export interface PluginsSearchParams {
-  query?: string;
-  compat_only?: boolean;
-  category?: PluginCategory;
-  source?: "crates_io" | "github_topic" | "curated_index";
+  // `exactOptionalPropertyTypes` is on in this project's tsconfig,
+  // so explicit `| undefined` accepts the common "drop the filter
+  // by setting it to undefined" pattern used by `setFilters`.
+  query?: string | undefined;
+  compat_only?: boolean | undefined;
+  category?: PluginCategory | undefined;
+  source?: "crates_io" | "github_topic" | "curated_index" | undefined;
 }
 
 export interface PluginsSearchResponse {

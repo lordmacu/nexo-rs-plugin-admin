@@ -14,10 +14,13 @@ import { Download, RefreshCw, Search } from "lucide-react";
 
 import { useAvailablePlugins, usePluginsDoctor } from "../../store/plugins";
 import { adminCall } from "../../api/admin";
+import type { DiscoveredPlugin } from "../../api/plugin_discovery";
 import { useT } from "../../i18n";
 import AvailableGrid from "./AvailableGrid";
 import InstalledList from "./InstalledList";
-import InstallPluginModal from "./InstallPluginModal";
+import InstallPluginModal, {
+  type InstallModalInitialValues,
+} from "./InstallPluginModal";
 import PluginsTabs, { type PluginsTabKey } from "./PluginsTabs";
 import RestartPluginModal from "./RestartPluginModal";
 
@@ -33,6 +36,9 @@ export default function PluginsMain() {
   const available = useAvailablePlugins();
   const [restartTarget, setRestartTarget] = useState<string | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
+  const [installInitialValues, setInstallInitialValues] = useState<
+    InstallModalInitialValues | undefined
+  >(undefined);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResponse | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -187,7 +193,18 @@ export default function PluginsMain() {
             onRequestRestart={setRestartTarget}
           />
         ) : (
-          <AvailableGrid />
+          <AvailableGrid
+            onInstall={(plugin: DiscoveredPlugin) => {
+              setInstallInitialValues({
+                crate_name: plugin.install_params.crate_name,
+                version: plugin.install_params.version ?? undefined,
+                repo: plugin.install_params.repo ?? undefined,
+                source: plugin.install_params.source,
+                force: plugin.install_params.force,
+              });
+              setInstallOpen(true);
+            }}
+          />
         )}
       </PluginsTabs>
 
@@ -203,11 +220,16 @@ export default function PluginsMain() {
       )}
       {installOpen && (
         <InstallPluginModal
-          onClose={() => setInstallOpen(false)}
+          onClose={() => {
+            setInstallOpen(false);
+            setInstallInitialValues(undefined);
+          }}
           onInstalled={() => {
             setInstallOpen(false);
+            setInstallInitialValues(undefined);
             void reload();
           }}
+          initialValues={installInitialValues}
         />
       )}
     </div>

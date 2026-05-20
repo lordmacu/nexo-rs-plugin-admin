@@ -28,12 +28,26 @@ import { AlertTriangle, Download, X } from "lucide-react";
 import { adminCall } from "../../api/admin";
 import { useT } from "../../i18n";
 
+type Source = "release" | "cargo";
+
+/** Phase 98.13 — pre-fill payload from a catalogue click. Each
+ *  field is optional; unset fields fall back to the empty form.
+ *  `exactOptionalPropertyTypes` is on so `| undefined` is explicit. */
+export interface InstallModalInitialValues {
+  crate_name?: string | undefined;
+  version?: string | undefined;
+  repo?: string | undefined;
+  source?: Source | undefined;
+  force?: boolean | undefined;
+}
+
 interface Props {
   onClose: () => void;
   onInstalled: () => void;
+  /** Phase 98.13 — when present, the modal opens with these fields
+   *  pre-populated. Operator can still adjust before submitting. */
+  initialValues?: InstallModalInitialValues | undefined;
 }
-
-type Source = "release" | "cargo";
 
 interface InstallResponse {
   crate_name: string;
@@ -47,13 +61,17 @@ const CRATE_NAME_RX = /^[a-z0-9_-]+$/;
 const VERSION_RX = /^[0-9A-Za-z.+-]+$/;
 const REPO_RX = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-export default function InstallPluginModal({ onClose, onInstalled }: Props) {
+export default function InstallPluginModal({
+  onClose,
+  onInstalled,
+  initialValues,
+}: Props) {
   const t = useT();
-  const [crateName, setCrateName] = useState("");
-  const [version, setVersion] = useState("");
-  const [repo, setRepo] = useState("");
-  const [source, setSource] = useState<Source>("release");
-  const [force, setForce] = useState(false);
+  const [crateName, setCrateName] = useState(initialValues?.crate_name ?? "");
+  const [version, setVersion] = useState(initialValues?.version ?? "");
+  const [repo, setRepo] = useState(initialValues?.repo ?? "");
+  const [source, setSource] = useState<Source>(initialValues?.source ?? "release");
+  const [force, setForce] = useState(initialValues?.force ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<InstallResponse | null>(null);

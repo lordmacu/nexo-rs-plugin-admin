@@ -1099,6 +1099,47 @@ const en = {
   "plugins.available.placeholder_count":
     "{count} plugins discovered (Phase 98.13 will render rich cards with badges)",
 
+  // Phase 98.13 — catalogue card.
+  "plugins.card.install": "Install",
+  "plugins.card.install_disabled_tooltip":
+    "Plugin pinned to an SDK / daemon version line incompatible with the running daemon.",
+  "plugins.card.copy_cmd": "Copy cmd",
+  "plugins.card.copied": "Copied!",
+  "plugins.card.open_repo": "Open repository",
+
+  // Phase 98.13 — source / trust / compat badges.
+  "plugins.badge.source.crates_io": "crates.io",
+  "plugins.badge.source.github_topic": "GitHub topic",
+  "plugins.badge.source.curated_index": "indexed",
+  "plugins.badge.trust.official": "official",
+  "plugins.badge.trust.community": "community",
+  "plugins.badge.trust.unverified": "unverified",
+  "plugins.badge.trust.official_tooltip":
+    "Owner appears in the daemon's trusted-keys allowlist.",
+  "plugins.badge.trust.community_tooltip":
+    "Listed in lordmacu/nexo-plugin-index but not in the daemon's official allowlist.",
+  "plugins.badge.trust.unverified_tooltip":
+    "Neither in the official allowlist nor the curated index — review before installing.",
+  "plugins.badge.compat.ok": "compatible",
+  "plugins.badge.compat.needs_upgrade": "upgrade daemon",
+  "plugins.badge.compat.needs_upgrade_tooltip":
+    "Plugin requires {required}; daemon is {current}.",
+  "plugins.badge.compat.incompatible": "incompatible",
+  "plugins.badge.compat.unknown": "compat unknown",
+  "plugins.badge.compat.unknown_tooltip":
+    "Manifest not fetched — install proceeds without compat verification.",
+
+  // Phase 98.14 — search bar + partial failure banner.
+  "plugins.search.placeholder": "Search by name, description, or tag…",
+  "plugins.search.aria_label": "Filter plugins by substring",
+  "plugins.search.clear": "Clear search",
+  "plugins.search.category_label": "Category",
+  "plugins.search.category_all": "All",
+  "plugins.search.compat_only": "Compatible only",
+  "plugins.partial_failure.heading":
+    "{count} discovery sources failed — catalogue may be incomplete:",
+  "plugins.partial_failure.dismiss": "Dismiss",
+
   // Phase 81.21.b.b follow-up — manual plugin restart modal.
   "plugins.restart.title": "Restart plugin",
   "plugins.restart.action": "Restart",

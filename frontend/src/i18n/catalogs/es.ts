@@ -1103,6 +1103,47 @@ const es = {
   "plugins.available.placeholder_count":
     "{count} plugins descubiertos (la fase 98.13 los renderiza con tarjetas + badges)",
 
+  // Phase 98.13 — tarjeta del catálogo.
+  "plugins.card.install": "Instalar",
+  "plugins.card.install_disabled_tooltip":
+    "El plugin está fijado a una versión de SDK / daemon incompatible con el daemon en ejecución.",
+  "plugins.card.copy_cmd": "Copiar cmd",
+  "plugins.card.copied": "¡Copiado!",
+  "plugins.card.open_repo": "Abrir repositorio",
+
+  // Phase 98.13 — badges de fuente / confianza / compat.
+  "plugins.badge.source.crates_io": "crates.io",
+  "plugins.badge.source.github_topic": "GitHub topic",
+  "plugins.badge.source.curated_index": "indexado",
+  "plugins.badge.trust.official": "oficial",
+  "plugins.badge.trust.community": "comunidad",
+  "plugins.badge.trust.unverified": "no verificado",
+  "plugins.badge.trust.official_tooltip":
+    "El owner aparece en la allowlist trusted-keys del daemon.",
+  "plugins.badge.trust.community_tooltip":
+    "Listado en lordmacu/nexo-plugin-index pero no en la allowlist oficial.",
+  "plugins.badge.trust.unverified_tooltip":
+    "No está ni en la allowlist oficial ni en el índice curado — revisa antes de instalar.",
+  "plugins.badge.compat.ok": "compatible",
+  "plugins.badge.compat.needs_upgrade": "actualizar daemon",
+  "plugins.badge.compat.needs_upgrade_tooltip":
+    "El plugin requiere {required}; el daemon tiene {current}.",
+  "plugins.badge.compat.incompatible": "incompatible",
+  "plugins.badge.compat.unknown": "compat desconocida",
+  "plugins.badge.compat.unknown_tooltip":
+    "Manifest no obtenido — la instalación procede sin verificar compatibilidad.",
+
+  // Phase 98.14 — barra de búsqueda + banner de fallos parciales.
+  "plugins.search.placeholder": "Busca por nombre, descripción o tag…",
+  "plugins.search.aria_label": "Filtra plugins por subcadena",
+  "plugins.search.clear": "Limpiar búsqueda",
+  "plugins.search.category_label": "Categoría",
+  "plugins.search.category_all": "Todas",
+  "plugins.search.compat_only": "Solo compatibles",
+  "plugins.partial_failure.heading":
+    "{count} fuentes de discovery fallaron — el catálogo puede estar incompleto:",
+  "plugins.partial_failure.dismiss": "Descartar",
+
   // Phase 81.21.b.b follow-up — modal de restart manual.
   "plugins.restart.title": "Reiniciar plugin",
   "plugins.restart.action": "Reiniciar",

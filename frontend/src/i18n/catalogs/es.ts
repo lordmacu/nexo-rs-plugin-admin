@@ -1210,6 +1210,7 @@ const es = {
   "skills.title": "Skills",
   "skills.action.reload": "Actualizar",
   "skills.row.delete": "Eliminar skill",
+  "skills.row.from_plugin": "del plugin",
   "skills.delete.confirm": "¿Eliminar la skill «{name}»? Esto borra el directorio del disco.",
   "skills.deleting": "Eliminando «{name}»…",
   "skills.empty.body": "No hay skills configuradas. Use la CLI o el contenido de extensión para añadirlas.",

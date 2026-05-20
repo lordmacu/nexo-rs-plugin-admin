@@ -14,6 +14,9 @@ export interface SkillSummary {
   name: string;
   display_name?: string | null;
   description?: string | null;
+  // Phase 97.1.γ — contributing plugin id when this skill comes from a
+  // plugin's `[plugin.skills] contributes_dir`; absent for operator skills.
+  source_plugin?: string | null;
   updated_at: string;
 }
 

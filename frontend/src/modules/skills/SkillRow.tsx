@@ -31,8 +31,18 @@ export default function SkillRow({
         className="flex-1 text-left"
         onClick={onSelect}
       >
-        <div className="font-mono text-sm text-text-primary">
-          {skill.display_name ?? skill.name}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm text-text-primary">
+            {skill.display_name ?? skill.name}
+          </span>
+          {skill.source_plugin && (
+            <span
+              className="rounded bg-panel-alt px-1.5 py-0.5 text-[10px] font-medium text-text-secondary"
+              title={`${t("skills.row.from_plugin")}: ${skill.source_plugin}`}
+            >
+              {t("skills.row.from_plugin")}: {skill.source_plugin}
+            </span>
+          )}
         </div>
         {skill.description && (
           <div className="mt-0.5 truncate text-xs text-text-secondary">
@@ -40,14 +50,18 @@ export default function SkillRow({
           </div>
         )}
       </button>
-      <button
-        type="button"
-        className="ml-2 rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
-        onClick={onDelete}
-        title={t("skills.row.delete")}
-      >
-        <Trash2 size={14} />
-      </button>
+      {/* Phase 97.1.γ — plugin-contributed skills are read-only here;
+          they are removed by uninstalling the plugin. */}
+      {!skill.source_plugin && (
+        <button
+          type="button"
+          className="ml-2 rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
+          onClick={onDelete}
+          title={t("skills.row.delete")}
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
   );
 }

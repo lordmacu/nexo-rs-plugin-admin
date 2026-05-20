@@ -1206,6 +1206,7 @@ const en = {
   "skills.title": "Skills",
   "skills.action.reload": "Reload",
   "skills.row.delete": "Delete skill",
+  "skills.row.from_plugin": "from plugin",
   "skills.delete.confirm": "Delete skill \"{name}\"? This removes the directory from disk.",
   "skills.deleting": "Deleting \"{name}\"…",
   "skills.empty.body": "No skills configured. Use the CLI or extension contents to add them.",

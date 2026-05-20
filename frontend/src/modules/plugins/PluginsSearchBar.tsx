@@ -116,8 +116,7 @@ export default function PluginsSearchBar() {
           <option value="">{t("plugins.search.category_all")}</option>
           {CATEGORY_OPTIONS.map((c) => (
             <option key={c} value={c}>
-              {t(`plugins.badge.source.${c}` as never, {}) /* placeholder */}
-              {c}
+              {t(`plugins.search.category.${c}` as never, {})}
             </option>
           ))}
         </select>

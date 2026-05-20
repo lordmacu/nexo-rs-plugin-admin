@@ -1135,6 +1135,11 @@ const en = {
   "plugins.search.clear": "Clear search",
   "plugins.search.category_label": "Category",
   "plugins.search.category_all": "All",
+  "plugins.search.category.channel": "Channel",
+  "plugins.search.category.poller": "Poller",
+  "plugins.search.category.tool": "Tool",
+  "plugins.search.category.webhook": "Webhook",
+  "plugins.search.category.persona": "Persona",
   "plugins.search.compat_only": "Compatible only",
   "plugins.partial_failure.heading":
     "{count} discovery sources failed — catalogue may be incomplete:",

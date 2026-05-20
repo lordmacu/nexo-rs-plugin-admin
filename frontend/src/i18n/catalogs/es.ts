@@ -1139,6 +1139,11 @@ const es = {
   "plugins.search.clear": "Limpiar búsqueda",
   "plugins.search.category_label": "Categoría",
   "plugins.search.category_all": "Todas",
+  "plugins.search.category.channel": "Canal",
+  "plugins.search.category.poller": "Poller",
+  "plugins.search.category.tool": "Herramienta",
+  "plugins.search.category.webhook": "Webhook",
+  "plugins.search.category.persona": "Persona",
   "plugins.search.compat_only": "Solo compatibles",
   "plugins.partial_failure.heading":
     "{count} fuentes de discovery fallaron — el catálogo puede estar incompleto:",

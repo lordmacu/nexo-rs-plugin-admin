@@ -8,7 +8,7 @@
 // `setRestartTarget` callback (now passed via prop) opens the
 // `RestartPluginModal`.
 
-import { Activity, AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, RotateCcw, Trash2 } from "lucide-react";
 
 import type { PluginDiagnostic, PluginsDoctorResponse } from "../../api/plugin_doctor";
 import { useT } from "../../i18n";
@@ -17,12 +17,14 @@ interface InstalledListProps {
   data: PluginsDoctorResponse | null;
   isLoading: boolean;
   onRequestRestart: (pluginId: string) => void;
+  onRequestUninstall: (pluginId: string) => void;
 }
 
 export default function InstalledList({
   data,
   isLoading,
   onRequestRestart,
+  onRequestUninstall,
 }: InstalledListProps) {
   const t = useT();
   const report = data?.report ?? {};
@@ -83,6 +85,14 @@ export default function InstalledList({
                     title={t("plugins.restart.action")}
                   >
                     <RotateCcw size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-text-meta hover:bg-danger-soft hover:text-danger"
+                    onClick={() => onRequestUninstall(id)}
+                    title={t("plugins.uninstall.action")}
+                  >
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </li>

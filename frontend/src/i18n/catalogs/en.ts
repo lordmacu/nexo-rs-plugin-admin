@@ -1145,6 +1145,18 @@ const en = {
     "{count} discovery sources failed — catalogue may be incomplete:",
   "plugins.partial_failure.dismiss": "Dismiss",
 
+  // Phase 98 follow-up — uninstall modal.
+  "plugins.uninstall.title": "Uninstall plugin",
+  "plugins.uninstall.action": "Uninstall",
+  "plugins.uninstall.applying": "Uninstalling…",
+  "plugins.uninstall.cancel": "Cancel",
+  "plugins.uninstall.warning":
+    "The plugin subprocess will be stopped and dropped from the live registry. Active sessions through this plugin will fail. This cannot be undone without re-installing.",
+  "plugins.uninstall.field.plugin_id": "Plugin ID",
+  "plugins.uninstall.cargo_uninstall":
+    "Also delete the binary from disk (cargo uninstall) — unchecked keeps it for re-enable without re-download",
+  "plugins.uninstall.confirm_prompt": "Type `{prefix}` to confirm.",
+
   // Phase 81.21.b.b follow-up — manual plugin restart modal.
   "plugins.restart.title": "Restart plugin",
   "plugins.restart.action": "Restart",

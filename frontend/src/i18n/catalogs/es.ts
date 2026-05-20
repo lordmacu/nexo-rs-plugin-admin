@@ -1149,6 +1149,18 @@ const es = {
     "{count} fuentes de discovery fallaron — el catálogo puede estar incompleto:",
   "plugins.partial_failure.dismiss": "Descartar",
 
+  // Phase 98 follow-up — modal de desinstalación.
+  "plugins.uninstall.title": "Desinstalar plugin",
+  "plugins.uninstall.action": "Desinstalar",
+  "plugins.uninstall.applying": "Desinstalando…",
+  "plugins.uninstall.cancel": "Cancelar",
+  "plugins.uninstall.warning":
+    "El subproceso del plugin se detendrá y saldrá del registro vivo. Las sesiones activas por este plugin fallarán. No se puede deshacer sin reinstalar.",
+  "plugins.uninstall.field.plugin_id": "ID del plugin",
+  "plugins.uninstall.cargo_uninstall":
+    "Borrar también el binario del disco (cargo uninstall) — sin marcar lo conserva para reactivar sin re-descargar",
+  "plugins.uninstall.confirm_prompt": "Escribe `{prefix}` para confirmar.",
+
   // Phase 81.21.b.b follow-up — modal de restart manual.
   "plugins.restart.title": "Reiniciar plugin",
   "plugins.restart.action": "Reiniciar",

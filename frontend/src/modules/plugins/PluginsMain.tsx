@@ -23,6 +23,7 @@ import InstallPluginModal, {
 } from "./InstallPluginModal";
 import PluginsTabs, { type PluginsTabKey } from "./PluginsTabs";
 import RestartPluginModal from "./RestartPluginModal";
+import UninstallPluginModal from "./UninstallPluginModal";
 
 interface ScanResponse {
   spawned: string[];
@@ -35,6 +36,7 @@ export default function PluginsMain() {
   const { data, isLoading, error, reload } = usePluginsDoctor();
   const available = useAvailablePlugins();
   const [restartTarget, setRestartTarget] = useState<string | null>(null);
+  const [uninstallTarget, setUninstallTarget] = useState<string | null>(null);
   const [installOpen, setInstallOpen] = useState(false);
   const [installInitialValues, setInstallInitialValues] = useState<
     InstallModalInitialValues | undefined
@@ -191,6 +193,7 @@ export default function PluginsMain() {
             data={data}
             isLoading={isLoading}
             onRequestRestart={setRestartTarget}
+            onRequestUninstall={setUninstallTarget}
           />
         ) : (
           <AvailableGrid
@@ -214,6 +217,16 @@ export default function PluginsMain() {
           onClose={() => setRestartTarget(null)}
           onApplied={() => {
             setRestartTarget(null);
+            void reload();
+          }}
+        />
+      )}
+      {uninstallTarget && (
+        <UninstallPluginModal
+          pluginId={uninstallTarget}
+          onClose={() => setUninstallTarget(null)}
+          onApplied={() => {
+            setUninstallTarget(null);
             void reload();
           }}
         />
